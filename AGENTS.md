@@ -2,10 +2,9 @@
 
 ## Project Overview
 
-CostcoChickenTracker — a Next.js (App Router) web app for crowdsourcing Costco
+CostcoChickenTracker — a TanStack Start (Vite-based) web app for crowdsourcing Costco
 rotisserie chicken batch timestamps and visualizing probability heatmaps. Full-stack
-TypeScript, single repo. Early stage (scaffolded from `create-next-app`, core features
-not yet built).
+TypeScript, single repo. Early stage (core features not yet built).
 
 ---
 
@@ -19,7 +18,6 @@ bun run dev                               # Development server (http://localhost
 bun run build                             # Production build
 bun run start                             # Start production server
 bun run lint                              # Lint/format (Ultracite: also `fix`, `check`, `doctor`)
-bunx eslint app/page.tsx                  # Lint a single file
 bunx tsc --noEmit                         # Type-check without emitting
 bunx vitest run                           # Run all tests
 bunx vitest run path/to/file.test.ts      # Run a single test file
@@ -35,19 +33,32 @@ Testing uses **Vitest** + **React Testing Library** (`@testing-library/react`,
 ## Project Structure
 
 ```
-app/                  # Next.js App Router pages and layouts
-  layout.tsx          # Root layout (Geist fonts, global CSS)
-  page.tsx            # Home page
-  globals.css         # Tailwind v4 + CSS custom properties
+src/
+  app/                # TanStack Start file-based routes
+    __root.tsx        # Root layout (HTML shell, global CSS, Outlet)
+    index.tsx         # Home page route ("/")
+    globals.css       # Tailwind v4 + CSS custom properties
+    api/
+      auth/
+        $.ts          # Better Auth catch-all API route
+  lib/
+    auth.ts           # Better Auth server config
+    auth.server.ts    # Server-side session helpers (getSession, ensureSession)
+    db/
+      index.ts        # Drizzle DB client
+      schema.ts       # Drizzle schema definitions
+    env.ts            # t3-env environment variable validation
+  router.tsx          # TanStack router config + type registration
+  routeTree.gen.ts    # Auto-generated route tree (do not edit)
 docs/
   PRD.md              # Product requirements document (canonical)
-  TECH_SPEC.md        # Technical specification (older, PRD wins on conflicts)
-public/               # Static assets (SVGs)
-eslint.config.mjs     # ESLint 9 flat config
-next.config.ts        # Next.js configuration
-postcss.config.mjs    # PostCSS with @tailwindcss/postcss
+  decisions.md        # Decision log
+  TANSTACK_MIGRATE.md # Migration plan from Next.js
+public/               # Static assets
+vite.config.ts        # Vite config (TanStack Start, Tailwind, React plugins)
 vitest.config.mts     # Vitest test configuration
 tsconfig.json         # TypeScript config (strict, bundler resolution)
+biome.jsonc           # Biome/Ultracite linting and formatting config
 ```
 
 ---
@@ -61,7 +72,7 @@ Write code that is **accessible, performant, type-safe, and maintainable**. Focu
 - **Strict mode** is on (`"strict": true` in tsconfig.json).
 - Target: ES2017. Module: ESNext with bundler resolution.
 - Use `type` imports for type-only imports: `import type { Foo } from "bar"`.
-- Path alias: `@/*` maps to project root. Use `@/app/...`, `@/lib/...`, etc.
+- Path alias: `@/*` maps to `src/`. Use `@/app/...`, `@/lib/...`, etc.
 - Prefer explicit return types on exported functions.
 - No `any` — use `unknown`, narrow with type guards, and leverage TypeScript's type narrowing instead of type assertions.
 - Use const assertions (`as const`) for immutable values and literal types.
@@ -69,26 +80,27 @@ Write code that is **accessible, performant, type-safe, and maintainable**. Focu
 
 ### Imports
 
-- Order: (1) React/Next.js, (2) third-party, (3) internal `@/` aliases, (4) relative.
+- Order: (1) React/TanStack, (2) third-party, (3) internal `@/` aliases, (4) relative.
 - Separate groups with a blank line.
-- Use named exports for components and utilities. Default exports only for
-  Next.js pages/layouts (required by the framework).
+- Use named exports for components and utilities. Default exports are not
+  required by TanStack Start (unlike Next.js).
 - Prefer specific imports over namespace imports. Avoid barrel files (index files that re-export everything).
 
 ```tsx
-import type { Metadata } from "next";
+import type { FileRoute } from "@tanstack/react-router";
 
 import { someUtil } from "@/lib/utils";
 
 import "./globals.css";
 ```
 
-### React / Next.js
+### React / TanStack Start
 
-- **App Router** pattern. Pages go in `app/` as `page.tsx`.
-- Server Components by default. Add `"use client"` only for client interactivity. Use Server Components for async data fetching instead of async Client Components.
-- Layouts in `layout.tsx`, loading in `loading.tsx`, errors in `error.tsx`.
-- Use Next.js `<Image>` instead of `<img>`. Use `next/head` or App Router metadata API for head elements.
+- **File-based routing** via TanStack Router. Routes go in `src/app/` as `.tsx` files.
+- Route definitions use `createFileRoute` or `createRootRoute` with `component`, `loader`, `beforeLoad`, etc.
+- Data fetching uses route `loader` functions and `createServerFn` from `@tanstack/react-start`.
+- Layouts use pathless routes (e.g., `_protected.tsx`) or `__root.tsx` for the root layout.
+- Use `<Outlet />` for nested route rendering and `<HeadContent />` / `<Scripts />` in the root layout.
 - Props types: inline `Readonly<{}>` wrapper or named interfaces.
 - Use function components over class components. Use ref as a prop instead of `React.forwardRef` (React 19+).
 - Call hooks at the top level only, never conditionally. Specify all dependencies in hook dependency arrays correctly.
@@ -104,7 +116,7 @@ import "./globals.css";
 
 ### Styling
 
-- **Tailwind CSS v4** via PostCSS (not the older config-based setup).
+- **Tailwind CSS v4** via Vite plugin (not the older PostCSS-based setup).
 - Utility-first classes directly in JSX `className`.
 - CSS custom properties defined in `app/globals.css`.
 - Dark mode via `prefers-color-scheme` media query and `dark:` variants.
@@ -114,7 +126,7 @@ import "./globals.css";
 ### Naming Conventions
 
 - **Files**: `kebab-case` for utility files, `PascalCase.tsx` for components (or
-  follow Next.js conventions like `page.tsx`, `layout.tsx`).
+  follow TanStack Start conventions like `__root.tsx`, `index.tsx`, `$param.tsx`).
 - **Components**: PascalCase (`RootLayout`, `Home`).
 - **Functions/variables**: camelCase.
 - **Types/interfaces**: PascalCase, prefer `type` over `interface` unless extending.
@@ -123,8 +135,8 @@ import "./globals.css";
 
 ### Error Handling
 
-- Use Next.js `error.tsx` boundaries for page-level errors.
-- Server actions should return structured error objects, not throw.
+- Use route-level error boundaries or `errorComponent` in route definitions for page-level errors.
+- Server functions should return structured error objects, not throw.
 - For Effect-based code: use typed errors in the error channel, not exceptions.
 - Validate and sanitize all user input on the server side (timestamps, GPS, rate limits).
 - Throw `Error` objects with descriptive messages, not strings or other values.
@@ -174,22 +186,6 @@ import "./globals.css";
 - Semicolons at end of statements.
 - Trailing commas in multi-line structures.
 - Max line length: ~100 characters (soft limit, break JSX as needed).
-
----
-
-## ESLint Configuration
-
-Flat config (`eslint.config.mjs`) extends `eslint-config-next/core-web-vitals` and
-`eslint-config-next/typescript`. Ignored paths: `.next/`, `out/`, `build/`,
-`next-env.d.ts`. Do not disable ESLint rules without a comment explaining why.
-
----
-
-## Environment Variables
-
-All `.env*` files are gitignored. Use `.env.local` for local development secrets.
-Required env vars should be validated at startup (e.g., database URL, auth secrets).
-Never commit secrets or API keys.
 
 ---
 

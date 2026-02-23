@@ -26,8 +26,8 @@ The name is intentionally direct for SEO and virality. If Costco reaches out reg
 
 | Layer | Choice | Notes |
 |---|---|---|
-| Framework | Next.js (App Router) | Single repo, full stack TypeScript |
-| Hosting | Vercel | Free tier, preview envs per PR |
+| Framework | TanStack Start (Vite-based) | Single repo, full stack TypeScript |
+| Hosting | Vercel (or any Node.js host) | Supports Vercel, Netlify, Cloudflare, bare Node.js |
 | Database | PlanetScale Postgres | $5/mo instance, branching for dev/prod |
 | ORM | Drizzle | Type safe, schema as source of truth |
 | DB Driver | pg (node-postgres) | Recommended by Drizzle docs for node-postgres dialect |

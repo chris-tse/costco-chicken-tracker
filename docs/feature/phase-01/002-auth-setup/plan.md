@@ -27,33 +27,36 @@ Set up Better Auth with Google OAuth, Drizzle adapter, invite-code-gated signup,
 - Research: does Better Auth require additional peer deps for the Drizzle adapter or Google OAuth provider?
 
 ### 2. Configure Better Auth server
-- Location: `lib/auth/index.ts` (or `lib/auth.ts`)
+- Location: `src/lib/auth.ts`
 - Configure:
   - Database: use the Drizzle adapter, pointing to the `db` instance from 001
   - Social provider: Google OAuth (`clientId`, `clientSecret` from env)
   - Session: configure session strategy (JWT or database sessions — research Better Auth defaults)
+  - Cookie plugin: `tanstackStartCookies()` from `better-auth/tanstack-start` (replaces Next.js `nextCookies()`)
 - Better Auth may create its own tables (sessions, accounts, etc.) — research how these interact with the existing `users` table from 001. May need to either:
   - (a) Let Better Auth manage its own user table and link to the app's `users` table, OR
   - (b) Configure Better Auth to use the existing `users` table schema
   - Document the chosen approach and any schema adjustments needed
 
 ### 3. Create auth API route
-- Location: `app/api/auth/[...all]/route.ts`
-- Mount Better Auth's request handler for all auth routes
+- Location: `src/app/api/auth/$.ts` (TanStack Start catch-all route)
+- Mount Better Auth's request handler using `createFileRoute("/api/auth/$")` with `server.handlers`
 - This handles OAuth callbacks, session management, etc.
+- **Note:** This route was already scaffolded during the TanStack migration; verify the import path points to the final auth config location
 
-### 4. Create auth middleware
-- Location: `middleware.ts` (project root)
-- Protect authenticated routes
-- Allow public access to: `/`, `/sign-in`, `/sign-up`, `/api/auth/*`
-- Redirect unauthenticated users to `/sign-in`
-- Research: Better Auth's recommended middleware pattern for Next.js App Router
+### 4. Create auth protection via route guard
+- Location: `src/app/_protected.tsx` (pathless layout route)
+- Use `beforeLoad` hook with `getSession` server function to check auth
+- Protected pages go under `src/app/_protected/` directory
+- Allow public access to: `/`, `/sign-in`, `/sign-up`, `/api/auth/*` (outside the protected layout)
+- Redirect unauthenticated users to `/sign-in` via `throw redirect({ to: "/sign-in" })`
+- **Note:** This replaces the Next.js `proxy.ts` / `middleware.ts` pattern. TanStack Start uses per-route `beforeLoad` guards instead of global middleware.
 
 ### 5. Build sign-up page
-- Location: `app/sign-up/page.tsx`
+- Location: `src/app/sign-up.tsx` (TanStack route)
 - Flow:
-  1. Page reads `?code=abc123` from URL search params
-  2. Validate invite code against `invite_codes` table (server-side):
+  1. Route reads `?code=abc123` from search params via `validateSearch` + `Route.useSearch()`
+  2. Validate invite code via a server function against `invite_codes` table:
      - Code exists
      - Code has not been used (`used_by` is null)
      - Code has not been revoked (`revoked_at` is null)
@@ -63,23 +66,25 @@ Set up Better Auth with Google OAuth, Drizzle adapter, invite-code-gated signup,
      - Create user record
      - Mark invite code as used (`used_by`, `used_at`)
      - Redirect to home/onboarding
-- This page should be a Server Component with the OAuth button as a Client Component
+- Sign-up button component at `src/app/-components/sign-up-button.tsx`
 
 ### 6. Build sign-in page
-- Location: `app/sign-in/page.tsx`
+- Location: `src/app/sign-in.tsx` (TanStack route)
 - Simple page with Google OAuth sign-in button
 - Redirect to home on success
 - Show error state if auth fails
 
 ### 7. Auth client utilities
-- Location: `lib/auth/client.ts`
+- Location: `src/lib/auth-client.ts`
 - Export client-side auth helpers (session hook, sign-out function)
 - Use Better Auth's client-side API
 - Research: `createAuthClient` from `better-auth/react` or similar
 
-### 8. Session provider / layout integration
-- Wrap the app in any required auth provider in `app/layout.tsx`
-- Make session data available to Server Components and Client Components
+### 8. Session access in routes
+- Session data is accessed via `getSession` server function (from `src/lib/auth.server.ts`)
+- For route loaders: call `getSession()` in the route's `loader` or `beforeLoad`
+- For client components: use `useSession()` from `src/lib/auth-client.ts`
+- No session provider wrapper needed in the root layout
 
 ### 9. Environment variables
 - Add to `.env.example`:
@@ -94,6 +99,15 @@ Set up Better Auth with Google OAuth, Drizzle adapter, invite-code-gated signup,
 - Session strategy: JWT vs database sessions (tradeoffs for this app)
 - How to pass the invite code through the OAuth flow (state parameter? cookie? session?)
 
+## TanStack Start Migration Notes
+The following changes were made to this plan after migrating from Next.js to TanStack Start:
+- **Cookie plugin:** `nextCookies()` → `tanstackStartCookies()` from `better-auth/tanstack-start`
+- **API route:** `app/api/auth/[...all]/route.ts` + `toNextJsHandler` → `src/app/api/auth/$.ts` with `server.handlers`
+- **Auth middleware:** `proxy.ts` (Next.js 16) → `_protected.tsx` pathless layout with `beforeLoad` guard
+- **Page pattern:** Server Components + Client Components → TanStack routes with `createFileRoute`
+- **Server actions:** Next.js server actions → `createServerFn` from `@tanstack/react-start`
+- **File paths:** `app/` → `src/app/`, `lib/` → `src/lib/`
+
 ## Verification
 - `bunx tsc --noEmit` passes
 - `bun run lint` passes
@@ -106,11 +120,13 @@ Set up Better Auth with Google OAuth, Drizzle adapter, invite-code-gated signup,
 - Write tests for invite code validation logic
 
 ## Output
-- `lib/auth/index.ts` (server config)
-- `lib/auth/client.ts` (client utilities)
-- `app/api/auth/[...all]/route.ts`
-- `app/sign-up/page.tsx`
-- `app/sign-in/page.tsx`
-- `middleware.ts`
-- Updated `lib/db/schema.ts` (if Better Auth requires schema additions)
+- `src/lib/auth.ts` (server config)
+- `src/lib/auth-client.ts` (client utilities)
+- `src/lib/auth.server.ts` (server-side session helpers — already scaffolded)
+- `src/app/api/auth/$.ts` (already scaffolded during TanStack migration)
+- `src/app/sign-up.tsx`
+- `src/app/-components/sign-up-button.tsx`
+- `src/app/sign-in.tsx`
+- `src/app/_protected.tsx` (auth route guard)
+- Updated `src/lib/db/schema.ts` (Better Auth table additions)
 - Updated `.env.example`
