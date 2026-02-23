@@ -30,6 +30,7 @@ The name is intentionally direct for SEO and virality. If Costco reaches out reg
 | Hosting | Vercel | Free tier, preview envs per PR |
 | Database | PlanetScale Postgres | $5/mo instance, branching for dev/prod |
 | ORM | Drizzle | Type safe, schema as source of truth |
+| DB Driver | pg (node-postgres) | Recommended by Drizzle docs for node-postgres dialect |
 | Auth | Better Auth | Self hosted, Google OAuth, Drizzle adapter |
 | Viz | Observable Plot | SVG rect heatmap, wrapped in ref component |
 | UI | Shadcn | Component primitives |
