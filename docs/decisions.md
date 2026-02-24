@@ -118,6 +118,20 @@ string to support this pattern.
 **Impact:** `env.ts` — `BETTER_AUTH_URL` changed from `z.url()` to `z.url().optional()`,
 `VERCEL_URL` added as `z.string().optional()`.
 
+### Better Auth admin plugin for role-based access (002-auth-setup)
+Using Better Auth's `admin()` plugin instead of a manual role column + custom
+middleware for admin route gating.
+**Why:** The admin plugin provides a `role` column on the `user` table (defaulting
+to `"user"`), server-side role helpers, and a client-side `adminClient()` plugin
+with typed role access on the session — all out of the box. This avoids hand-rolling
+role checks, keeps the session type augmented automatically, and aligns with Better
+Auth's plugin ecosystem. Admin routes use a `_protected/_admin.tsx` pathless layout
+that checks `session.user.role !== "admin"` in `beforeLoad`.
+**Alternative considered:**
+- *Manual `role` text column + custom guard logic:* Full control, but duplicates what
+  the plugin already does. The plugin also handles edge cases (role validation, admin
+  API endpoints) that would need to be built manually.
+
 ### Separate Google OAuth clients per environment
 Production and local development use different Google OAuth client credentials
 (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`). Preview deployments do not have
@@ -134,3 +148,19 @@ deployments is the standard trade-off — auth flows are tested locally instead.
 **Alternative considered:**
 - *Stable preview subdomain (e.g. `preview.yourdomain.com`):* Would allow a single OAuth
   client to cover previews, but adds DNS/routing infrastructure for little benefit at this stage.
+
+## 2026-02-28
+
+### No nested pathless `_admin` layout — inline admin check per route (002-auth-setup)
+The plan called for `src/app/_protected/_admin.tsx` as a nested pathless layout to gate admin
+routes. The TanStack Router generator (v1.162.6) rejects a standalone pathless layout with no
+children: both `_protected` and `_admin` strip their path segments, so the generator infers the
+route's full path as `/`, conflicting with `src/app/index.tsx`.
+**Decision:** Skip the `_admin` layout. Admin-gated routes live directly under
+`src/app/_protected/` with an inline `beforeLoad` that checks `session?.user.role !== "admin"`
+and redirects to `/` if the check fails. The first such route is `/dashboard`
+(`src/app/_protected/dashboard.tsx`).
+**Alternative considered:**
+- *Nested `_admin` layout with a real child route:* Would work once a child with a non-empty
+  path segment exists, but adds a layer of indirection for minimal benefit at this stage. Can be
+  revisited if many admin routes are added.

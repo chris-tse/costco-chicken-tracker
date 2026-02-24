@@ -10,16 +10,15 @@ TypeScript, single repo. Early stage (core features not yet built).
 
 ## Commands
 
-Package manager: **Bun** (lockfile: `bun.lock`).
-
 ```bash
 bun install                               # Install dependencies
 bun run dev                               # Development server (http://localhost:3000)
 bun run build                             # Production build
 bun run start                             # Start production server
-bun run lint                              # Lint/format (Ultracite: also `fix`, `check`, `doctor`)
-bunx tsc --noEmit                         # Type-check without emitting
-bunx vitest run                           # Run all tests
+bun run check                             # lint check
+bun run fix                               # lint fix
+bun run typecheck                         # Type-check without emitting
+bun run test                              # Run all tests
 bunx vitest run path/to/file.test.ts      # Run a single test file
 bunx vitest run -t "pattern"              # Run tests matching a pattern
 bunx vitest watch                         # Watch mode
@@ -27,39 +26,6 @@ bunx vitest watch                         # Watch mode
 
 Testing uses **Vitest** + **React Testing Library** (`@testing-library/react`,
 `@testing-library/jest-dom`) with `jsdom` as the environment.
-
----
-
-## Project Structure
-
-```
-src/
-  app/                # TanStack Start file-based routes
-    __root.tsx        # Root layout (HTML shell, global CSS, Outlet)
-    index.tsx         # Home page route ("/")
-    globals.css       # Tailwind v4 + CSS custom properties
-    api/
-      auth/
-        $.ts          # Better Auth catch-all API route
-  lib/
-    auth.ts           # Better Auth server config
-    auth.server.ts    # Server-side session helpers (getSession, ensureSession)
-    db/
-      index.ts        # Drizzle DB client
-      schema.ts       # Drizzle schema definitions
-    env.ts            # t3-env environment variable validation
-  router.tsx          # TanStack router config + type registration
-  routeTree.gen.ts    # Auto-generated route tree (do not edit)
-docs/
-  PRD.md              # Product requirements document (canonical)
-  decisions.md        # Decision log
-  TANSTACK_MIGRATE.md # Migration plan from Next.js
-public/               # Static assets
-vite.config.ts        # Vite config (TanStack Start, Tailwind, React plugins)
-vitest.config.mts     # Vitest test configuration
-tsconfig.json         # TypeScript config (strict, bundler resolution)
-biome.jsonc           # Biome/Ultracite linting and formatting config
-```
 
 ---
 

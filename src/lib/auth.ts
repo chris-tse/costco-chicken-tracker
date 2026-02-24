@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { admin } from "better-auth/plugins/admin";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { and, eq, isNull } from "drizzle-orm";
 
@@ -14,18 +15,7 @@ import {
   verifications,
 } from "@/lib/db/schema";
 import { env } from "@/lib/env";
-
-const INVITE_CODE_COOKIE_RE = /(?:^|;\s*)invite_code=([^;]+)/;
-
-function getBaseURL(): string {
-  if (env.BETTER_AUTH_URL) {
-    return env.BETTER_AUTH_URL;
-  }
-  if (env.VERCEL_URL) {
-    return `https://${env.VERCEL_URL}`;
-  }
-  return "http://localhost:3000";
-}
+import { getBaseURL, INVITE_CODE_COOKIE_RE } from "@/lib/utils/auth";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -113,5 +103,5 @@ export const auth = betterAuth({
       },
     },
   },
-  plugins: [tanstackStartCookies()],
+  plugins: [admin(), tanstackStartCookies()],
 });

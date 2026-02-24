@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # 002 — Auth Setup
