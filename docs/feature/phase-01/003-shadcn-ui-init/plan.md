@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # 003 — Shadcn UI Initialization

@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__linear-server__list_projects",
+      "mcp__linear-server__save_issue",
+      "mcp__linear-server__get_issue",
+      "mcp__linear-server__list_issues",
+      "WebSearch",
+      "WebFetch(domain:ui.shadcn.com)",
+      "WebFetch(domain:www.shadcndesign.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.luisball.com)",
+      "WebFetch(domain:tanstack.com)",
+      "mcp__linear-server__create_comment",
+      "mcp__linear-server__list_comments",
+      "Bash(bunx shadcn@latest:*)",
+      "Bash(printf \\\\n:*)",
+      "Bash(bunx tsc:*)",
+      "Bash(ls:*)"
+    ]
+  }
+}

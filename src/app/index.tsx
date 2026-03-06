@@ -1,23 +1,33 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute, redirect } from "@tanstack/react-router";
+
+import { getSession } from "@/lib/auth.server";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
+  beforeLoad: async () => {
+    const session = await getSession();
+    if (session) {
+      throw redirect({ to: "/app" });
+    }
+  },
   component: Home,
 });
 
 function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between bg-white px-16 py-32 sm:items-start dark:bg-black">
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs font-semibold text-3xl text-black leading-10 tracking-tight dark:text-zinc-50">
-            Costco Chicken Tracker
-          </h1>
-          <p className="max-w-md text-lg text-zinc-600 leading-8 dark:text-zinc-400">
-            Crowdsourced rotisserie chicken batch timestamps and probability
-            heatmaps.
-          </p>
-        </div>
-      </main>
+    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-16">
+      <div className="flex max-w-lg flex-col items-center gap-6 text-center">
+        <h1 className="font-semibold text-4xl tracking-tight sm:text-5xl">
+          Costco Chicken Tracker
+        </h1>
+        <p className="max-w-md text-lg text-muted-foreground leading-8">
+          Crowdsource rotisserie chicken batch timestamps and discover the best
+          times to grab a fresh bird with probability heatmaps.
+        </p>
+        <Button asChild size="lg">
+          <Link to="/sign-in">Sign In</Link>
+        </Button>
+      </div>
     </div>
   );
 }

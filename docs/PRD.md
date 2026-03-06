@@ -234,6 +234,7 @@ No formal staging environment for now.
 - Push notifications ("fresh chicken spotted near you")
 - Doneness as a quality dimension on the heatmap (see Footnote B)
 - Oven timer as a supplementary data point (see Footnote A)
+- Live sighting feed on the logged-out homepage — show a semi-real-time stream of recent sightings (e.g. "New batch spotted at Costco #123 — 5 minutes ago") to give visitors a sense of activity and encourage sign-ups
 
 ---
 
