@@ -25,7 +25,7 @@ function Home() {
           times to grab a fresh bird with probability heatmaps.
         </p>
         <Button asChild size="lg">
-          <Link to="/sign-in">Sign In</Link>
+          <Link to="/sign-up">Sign Up</Link>
         </Button>
       </div>
     </div>
