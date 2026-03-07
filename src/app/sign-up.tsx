@@ -1,7 +1,19 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { eq } from "drizzle-orm";
 
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { db } from "@/lib/db";
 import { inviteCodes } from "@/lib/db/schema";
 import {
@@ -45,21 +57,66 @@ export const Route = createFileRoute("/sign-up")({
   component: SignUpPage,
 });
 
+function InviteCodeForm() {
+  const [value, setValue] = useState("");
+  const navigate = useNavigate();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    navigate({ to: "/sign-up", search: { code: trimmed } });
+  };
+
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle>Invites are required (for now)</CardTitle>
+          <CardDescription>
+            If you received an invite code, enter it below.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="invite-code" className="sr-only">
+                Invite Code
+              </Label>
+              <Input
+                id="invite-code"
+                type="text"
+                placeholder="Enter your invite code"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+              />
+            </div>
+            <Button type="submit" disabled={!value.trim()}>
+              {value.trim() ? "CONTINUE" : "CODE REQUIRED"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 function SignUpPage() {
   const { code } = Route.useSearch();
   const result = Route.useLoaderData();
 
   if (!result.valid) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-red-600 dark:text-red-400">{result.error}</p>
-      </div>
-    );
+    return <InviteCodeForm />;
   }
 
   return (
     <div className="flex min-h-screen items-center justify-center">
-      <SignUpButton code={code ?? ""} />
+      <div className="flex flex-col items-center gap-4">
+        <h2 className="text-lg font-medium text-foreground">
+          Create your account
+        </h2>
+        <SignUpButton code={code ?? ""} />
+      </div>
     </div>
   );
 }
