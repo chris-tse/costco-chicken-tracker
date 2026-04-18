@@ -14,7 +14,9 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "stores:sync": "bun run scripts/sync-stores.ts",
+    "db:seed": "bun run scripts/seed-stores.ts"
   },
   "dependencies": {
     "@fontsource-variable/oswald": "^5.2.8",
