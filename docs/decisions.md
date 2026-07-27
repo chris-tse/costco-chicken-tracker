@@ -164,3 +164,34 @@ and redirects to `/` if the check fails. The first such route is `/dashboard`
 - *Nested `_admin` layout with a real child route:* Would work once a child with a non-empty
   path segment exists, but adds a layer of indirection for minimal benefit at this stage. Can be
   revisited if many admin routes are added.
+
+## 2026-07-26
+
+### Reset to a private, single-user chicken-tracking core
+
+The product is being reduced to a mobile-first personal tool that records a chicken label
+date/time and optional doneness (`light`, `medium`, or `dark`), supports correcting recent
+sightings, and visualizes historical frequency and doneness patterns.
+
+**Decision:**
+
+- Remove application authentication, users, invitations, sessions, roles, profiles, trust
+  scoring, moderation, approvals, rate limits, and admin features.
+- Remove stores, location selection, GPS, proximity checks, store-data synchronization, and
+  cross-store views. Document location as a possible future capability rather than preserving
+  it in the current model.
+- Replace the existing database schema and migrations without preserving current data.
+- Use PostgreSQL on the same local server as the application and delegate access control to
+  Tailscale or an equivalent private gateway.
+- Remove predictive probability and commute-time features. Historical visualization should
+  tell the story directly.
+
+**Why:** The multi-user crowdsourcing and location architecture expanded the project before
+its core capture-and-history loop existed. A private deployment does not need application
+identity or moderation, and a single tracking context does not need location infrastructure.
+
+**Supersedes:** The auth, invite-code, admin-role, environment-specific OAuth, PlanetScale,
+Vercel-preview, user-profile, store-pipeline, and multi-user data-quality decisions above.
+Those entries remain as historical context only.
+
+**Planning map:** [Wayfinder: Simplify Costco Chicken Tracker to its core loop](https://github.com/chris-tse/costco-chicken-tracker/issues/1)
