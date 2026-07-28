@@ -14,6 +14,7 @@ import { Route as SignInRouteImport } from './app/sign-in'
 import { Route as DevRouteImport } from './app/dev'
 import { Route as ProtectedRouteImport } from './app/_protected'
 import { Route as IndexRouteImport } from './app/index'
+import { Route as PrototypeHistoryRouteImport } from './app/prototype/history'
 import { Route as ProtectedAppRouteImport } from './app/_protected/app'
 import { Route as ProtectedAdminRouteImport } from './app/_protected/_admin'
 import { Route as ApiAuthSplatRouteImport } from './app/api/auth/$'
@@ -43,6 +44,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrototypeHistoryRoute = PrototypeHistoryRouteImport.update({
+  id: '/prototype/history',
+  path: '/prototype/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProtectedAppRoute = ProtectedAppRouteImport.update({
   id: '/app',
   path: '/app',
@@ -69,6 +75,7 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/app': typeof ProtectedAppRoute
+  '/prototype/history': typeof PrototypeHistoryRoute
   '/dashboard': typeof ProtectedAdminDashboardRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
@@ -78,6 +85,7 @@ export interface FileRoutesByTo {
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/app': typeof ProtectedAppRoute
+  '/prototype/history': typeof PrototypeHistoryRoute
   '/dashboard': typeof ProtectedAdminDashboardRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
@@ -90,6 +98,7 @@ export interface FileRoutesById {
   '/sign-up': typeof SignUpRoute
   '/_protected/_admin': typeof ProtectedAdminRouteWithChildren
   '/_protected/app': typeof ProtectedAppRoute
+  '/prototype/history': typeof PrototypeHistoryRoute
   '/_protected/_admin/dashboard': typeof ProtectedAdminDashboardRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
@@ -101,6 +110,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/app'
+    | '/prototype/history'
     | '/dashboard'
     | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
@@ -110,6 +120,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/app'
+    | '/prototype/history'
     | '/dashboard'
     | '/api/auth/$'
   id:
@@ -121,6 +132,7 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/_protected/_admin'
     | '/_protected/app'
+    | '/prototype/history'
     | '/_protected/_admin/dashboard'
     | '/api/auth/$'
   fileRoutesById: FileRoutesById
@@ -131,6 +143,7 @@ export interface RootRouteChildren {
   DevRoute: typeof DevRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
+  PrototypeHistoryRoute: typeof PrototypeHistoryRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
@@ -169,6 +182,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/prototype/history': {
+      id: '/prototype/history'
+      path: '/prototype/history'
+      fullPath: '/prototype/history'
+      preLoaderRoute: typeof PrototypeHistoryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_protected/app': {
@@ -234,6 +254,7 @@ const rootRouteChildren: RootRouteChildren = {
   DevRoute: DevRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
+  PrototypeHistoryRoute: PrototypeHistoryRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport
