@@ -10,7 +10,10 @@ A record of information read from a rotisserie chicken label.
 _Avoid_: Submission, report, purchase
 
 **Label time**:
-The date and time printed on a rotisserie chicken's label.
+The local calendar date and clock time printed on a rotisserie chicken's label, preserved
+as written rather than treated as the time the sighting was recorded or as an unambiguous
+instant. It has no timezone: a printed 2:00 PM is 2:00 PM regardless of where the
+sighting is recorded.
 _Avoid_: Observation time, purchase time, batch time
 
 **Doneness**:
