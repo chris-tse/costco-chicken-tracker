@@ -195,3 +195,109 @@ Vercel-preview, user-profile, store-pipeline, and multi-user data-quality decisi
 Those entries remain as historical context only.
 
 **Planning map:** [Wayfinder: Simplify Costco Chicken Tracker to its core loop](https://github.com/chris-tse/costco-chicken-tracker/issues/1)
+
+## 2026-07-30
+
+### Deploy one stateless application container against operator-provided PostgreSQL
+
+The production application will be distributed as a single, stateless OCI container. The
+container does not provision or run PostgreSQL; an operator-provided PostgreSQL database is
+configured through a required `DATABASE_URL` environment variable.
+
+**Decision:**
+
+- Publish a public image to GitHub Container Registry with a convenience `latest` tag and
+  immutable version tags. Production deployments should pin a version tag and retain the
+  previous known-good image for rollback.
+- Apply committed Drizzle migrations before the web server starts. A migration failure stops
+  startup, and a standalone migration command remains available for recovery.
+- Keep runtime configuration in environment variables. `DATABASE_URL` is the sole required
+  secret; settings such as the internal HTTP port may be optional and non-secret.
+- Serve plain HTTP on an internal container port. Tailscale or another external gateway owns
+  private-network access, TLS, routing, and prevention of untrusted public exposure.
+- Expose a health endpoint that verifies both the web process and database connectivity.
+- Delegate database provisioning, backups, and restores to the PostgreSQL operator. Document
+  daily backups with at least seven days of retention and a tested restore path as the baseline.
+- Keep schema migrations forward-only and compatible with the immediately preceding
+  application release so rolling back the container does not require an emergency database
+  rollback.
+
+**Why:** An app-only image keeps deployment portable while avoiding database lifecycle logic
+inside the application. Immutable image versions provide reproducible recovery, automatic
+migrations keep a single-instance personal deployment simple, and the external gateway retains
+the access-control responsibility established by the single-user scope reset.
+
+**Divergence from the prior plan:** The 2026-07-26 scope reset placed PostgreSQL on the same
+local server as the application. PostgreSQL is now external to the application deployment and
+may run wherever the operator chooses, provided the container can reach it.
+
+**Planning decision:** [Define the self-hosted operating boundary](https://github.com/chris-tse/costco-chicken-tracker/issues/5)
+
+## 2026-08-01
+
+### Launch with Capture and a minimal Visit planner
+
+The mobile application will have two persistent bottom-navigation destinations: Capture and
+Plan. Capture is the default route and owns the time-first Save-then-enrich flow, correction,
+deletion, and the three most recent sightings. Plan ships in the MVP as a small but functional
+visit planner rather than as a placeholder.
+
+**Decision:**
+
+- Use `/` for Capture, `/plan` for the Visit planner, and `/sightings/:id/edit` for the
+  full-screen correction flow. Hide bottom navigation during completion and correction.
+- After enrichment, Done returns to a fresh Capture screen with the saved sighting first in
+  Recent Sightings.
+- Default Plan to the device's current local weekday and time and update its result immediately
+  when either value changes.
+- Describe the selected rolling ±10-minute window relative to other windows on the same weekday
+  as one of the better times, about typical, or one of the quieter times. Always show the
+  supporting distinct-date count instead of a calibrated probability.
+- Include actionable empty and sparse-history states that lead back to Capture.
+- Defer the switchable 15-minute frequency/doneness grid and its planner cross-link until after
+  the capture-plus-planner core works. Reserve `/plan/history` for that secondary Plan view.
+
+**Why:** A functional planner gives immediate purpose to collecting sightings while keeping the
+first usable application small. Capture remains optimized for walking up to the warming shelf,
+and the richer historical grid can be added without changing the top-level information
+architecture.
+
+**Divergence from the prior plan:** The planning destination includes both the Visit planner and
+the historical grid, but the first usable MVP requires only Capture and the minimal Visit
+planner. The grid remains planned follow-up work rather than an MVP blocker.
+
+**Planning decision:** [Decide the final mobile information architecture](https://github.com/chris-tse/costco-chicken-tracker/issues/6)
+
+## 2026-08-05
+
+### Persist only the private core-loop sighting
+
+Replace the superseded multi-user schema with one `sightings` table whose editable
+facts are the timezone-free label date and minute plus optional doneness.
+
+**Decision:**
+
+- Use a server-generated PostgreSQL `integer` identity. Duplicate label times are valid.
+- Store label time as `label_date date` and `label_minute smallint`, constrained to `0` through
+  `1439`. Do not store display-formatted time text or a timestamp.
+- Store doneness as nullable text constrained to `light`, `medium`, or `dark`.
+- Record immutable `created_at` and application-maintained `updated_at` as `timestamptz`, with
+  PostgreSQL defaults on creation. Recent Sightings orders by `created_at DESC, id DESC`.
+- Expose explicit create, full correction, targeted doneness, and hard-delete operations. Do
+  not add generic patch, soft-delete, recovery, or optimistic-locking machinery.
+- Reset the schema and generated migrations with no compatibility or old-data migration path.
+- Initially calculate Visit planner results in application logic from distinct label-date and
+  label-minute evidence for the selected literal weekday. Keep ±10-minute windows within that
+  weekday. Move calculation into PostgreSQL only if profiling justifies it.
+- Add only the primary-key index and `(created_at DESC, id DESC)` Recent Sightings index.
+  Introduce planner-specific indexing only alongside a measured query need.
+- Keep the read contract to lookup by identity, deterministically list recent sightings, and
+  fetch distinct weekday evidence. Add a purpose-built history query when the deferred grid is
+  implemented.
+
+**Why:** This representation preserves the printed label facts without timezone ambiguity,
+keeps analytical operations numeric, and supplies exactly the correction and planning reads
+required by the resolved MVP. Deferring database-side analysis and specialized indexing keeps
+the initial contract small without preventing later optimization.
+
+**Planning decision:** [Define the minimal sighting persistence contract](https://github.com/chris-tse/costco-chicken-tracker/issues/7)
