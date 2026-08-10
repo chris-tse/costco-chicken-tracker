@@ -19,3 +19,12 @@ _Avoid_: Observation time, purchase time, batch time
 **Doneness**:
 An optional visual assessment of a chicken recorded as light, medium, or dark.
 _Avoid_: Rating, quality score
+
+**Visit plan**:
+A selected weekday and approximate time evaluated against historical sightings.
+_Avoid_: Prediction, forecast
+
+**Planner signal**:
+A non-probabilistic description of how a visit plan compares with historically observed
+times on the same weekday, supported by a distinct-date evidence count.
+_Avoid_: Probability, likelihood score
