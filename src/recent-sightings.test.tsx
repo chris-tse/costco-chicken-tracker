@@ -66,6 +66,37 @@ describe("Recent Sightings", () => {
     });
   });
 
+  it("keeps recent sightings available when opening a correction rejects", async () => {
+    const onOpenRecentCorrection = vi
+      .fn<(id: number) => Promise<void>>()
+      .mockRejectedValue(new Error("Navigation unavailable"));
+    render(
+      <CaptureForm
+        listRecentSightings={vi.fn().mockResolvedValue({
+          ok: true,
+          sightings: [createSighting(4, "2026-08-10")],
+        })}
+        now={() => new Date(2026, 7, 11, 14, 5)}
+        onOpenRecentCorrection={onOpenRecentCorrection}
+        saveSighting={vi.fn()}
+      />
+    );
+
+    const correctionButton = await screen.findByRole("button", {
+      name: RECENT_TIME_PATTERN,
+    });
+    fireEvent.click(correctionButton);
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "Unable to open this correction. Try again."
+      );
+    });
+    expect(onOpenRecentCorrection).toHaveBeenCalledWith(4);
+    expect(correctionButton).toBeEnabled();
+    expect(screen.getByRole("heading", { name: "Capture" })).toBeTruthy();
+  });
+
   it("announces a retryable recent-list failure without hiding Capture", async () => {
     render(
       <CaptureForm

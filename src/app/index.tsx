@@ -51,6 +51,8 @@ const getCurrentDeviceTime = (): Date => new Date();
 const LABEL_TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
 const STORE_OPENING_MINUTE = 9 * 60;
 const STORE_CLOSING_MINUTE = 20 * 60;
+const CORRECTION_NAVIGATION_FAILURE_MESSAGE =
+  "Unable to open this correction. Try again.";
 
 function padTimePart(value: number): string {
   return value.toString().padStart(2, "0");
@@ -193,8 +195,8 @@ export function CaptureForm({
   initialCompletionId?: number;
   listRecentSightings?: ListRecentSightings;
   now?: () => Date;
-  onOpenCompletionCorrection?: (id: number) => void;
-  onOpenRecentCorrection?: (id: number) => void;
+  onOpenCompletionCorrection?: (id: number) => Promise<void> | void;
+  onOpenRecentCorrection?: (id: number) => Promise<void> | void;
   saveSighting: CreateSighting;
   updateSightingDoneness?: UpdateSightingDoneness;
 }>): ReactNode {
@@ -485,9 +487,25 @@ function RecentSightings({
   sightings,
 }: Readonly<{
   errorMessage?: string;
-  onOpenCorrection?: (id: number) => void;
+  onOpenCorrection?: (id: number) => Promise<void> | void;
   sightings?: Sighting[];
 }>): ReactNode {
+  const [navigationErrorMessage, setNavigationErrorMessage] =
+    useState<string>();
+
+  const openCorrection = async (id: number): Promise<void> => {
+    if (!onOpenCorrection) {
+      return;
+    }
+
+    setNavigationErrorMessage(undefined);
+    try {
+      await onOpenCorrection(id);
+    } catch {
+      setNavigationErrorMessage(CORRECTION_NAVIGATION_FAILURE_MESSAGE);
+    }
+  };
+
   return (
     <section aria-labelledby="recent-sightings-heading" className="mt-8">
       <h2
@@ -499,6 +517,11 @@ function RecentSightings({
       {errorMessage ? (
         <p className="mt-3 text-destructive text-sm" role="alert">
           {errorMessage}
+        </p>
+      ) : null}
+      {navigationErrorMessage ? (
+        <p className="mt-3 text-destructive text-sm" role="alert">
+          {navigationErrorMessage}
         </p>
       ) : null}
       {errorMessage || sightings ? null : (
@@ -518,7 +541,7 @@ function RecentSightings({
             <li key={sighting.id}>
               <Button
                 className="h-auto min-h-12 w-full justify-start whitespace-normal py-3 text-left text-base"
-                onClick={() => onOpenCorrection?.(sighting.id)}
+                onClick={async () => await openCorrection(sighting.id)}
                 type="button"
                 variant="outline"
               >
@@ -539,7 +562,7 @@ function SightingCompletion({
   updateSightingDoneness,
 }: Readonly<{
   onDone: () => void;
-  onOpenCorrection?: (id: number) => void;
+  onOpenCorrection?: (id: number) => Promise<void> | void;
   sighting: Sighting;
   updateSightingDoneness: UpdateSightingDoneness;
 }>): ReactNode {
@@ -547,6 +570,8 @@ function SightingCompletion({
   const [currentSighting, setCurrentSighting] = useState(sighting);
   const [errorMessage, setErrorMessage] = useState<string>();
   const [isUpdating, setIsUpdating] = useState(false);
+  const [navigationErrorMessage, setNavigationErrorMessage] =
+    useState<string>();
   const [successMessage, setSuccessMessage] = useState<string>();
 
   useEffect(() => {
@@ -591,6 +616,19 @@ function SightingCompletion({
       );
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const openCorrection = async (): Promise<void> => {
+    if (!onOpenCorrection) {
+      return;
+    }
+
+    setNavigationErrorMessage(undefined);
+    try {
+      await onOpenCorrection(currentSighting.id);
+    } catch {
+      setNavigationErrorMessage(CORRECTION_NAVIGATION_FAILURE_MESSAGE);
     }
   };
 
@@ -664,6 +702,15 @@ function SightingCompletion({
               {errorMessage}
             </p>
           ) : null}
+          {navigationErrorMessage ? (
+            <p
+              aria-live="assertive"
+              className="text-destructive text-sm"
+              role="alert"
+            >
+              {navigationErrorMessage}
+            </p>
+          ) : null}
           <Button
             className="h-12 text-base"
             disabled={isUpdating}
@@ -675,7 +722,7 @@ function SightingCompletion({
           <Button
             className="h-12 text-base"
             disabled={isUpdating}
-            onClick={() => onOpenCorrection?.(currentSighting.id)}
+            onClick={openCorrection}
             type="button"
             variant="outline"
           >

@@ -483,6 +483,43 @@ describe("Capture", () => {
     expect(onOpenCompletionCorrection).toHaveBeenCalledWith(1);
   });
 
+  it("keeps completion available when opening its correction rejects", async () => {
+    const saveSighting = vi.fn().mockResolvedValue({
+      ok: true,
+      sighting: createSavedSighting(),
+    });
+    const onOpenCompletionCorrection = vi
+      .fn<(id: number) => Promise<void>>()
+      .mockRejectedValue(new Error("Navigation unavailable"));
+    render(
+      <CaptureForm
+        now={() => DEFAULT_CLOCK}
+        onOpenCompletionCorrection={onOpenCompletionCorrection}
+        saveSighting={saveSighting}
+        updateSightingDoneness={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Save label time" }));
+    await screen.findByRole("heading", { name: "Sighting saved" });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Correct this sighting" })
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "Unable to open this correction. Try again."
+      );
+    });
+    expect(onOpenCompletionCorrection).toHaveBeenCalledWith(1);
+    expect(
+      screen.getByRole("heading", { name: "Sighting saved" })
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Correct this sighting" })
+    ).toBeEnabled();
+  });
+
   it("leaves the durable creation intact when completion is interrupted", async () => {
     const saveSighting = vi.fn().mockResolvedValue({
       ok: true,
