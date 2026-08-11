@@ -39,7 +39,8 @@ export type UpdateSightingDonenessInput = z.infer<
 
 export type UpdateSightingDonenessResult =
   | { ok: true; sighting: Sighting }
-  | { message: string; ok: false };
+  | { kind: "not-found"; message: string; ok: false }
+  | { kind: "unavailable"; message: string; ok: false };
 
 export type UpdateSightingDoneness = (
   input: UpdateSightingDonenessInput

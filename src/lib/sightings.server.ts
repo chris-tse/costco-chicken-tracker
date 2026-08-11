@@ -51,6 +51,7 @@ export function createSightingOperations(database: Database): {
 
         if (!record) {
           return {
+            kind: "not-found",
             message: "This sighting is no longer available.",
             ok: false,
           };
@@ -58,7 +59,11 @@ export function createSightingOperations(database: Database): {
 
         return { ok: true, sighting: record };
       } catch {
-        return { message: DONENESS_FAILURE_MESSAGE, ok: false };
+        return {
+          kind: "unavailable",
+          message: DONENESS_FAILURE_MESSAGE,
+          ok: false,
+        };
       }
     },
   };

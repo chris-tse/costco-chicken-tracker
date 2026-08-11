@@ -328,6 +328,11 @@ function SightingCompletion({
       });
 
       if (!result.ok) {
+        if (result.kind === "not-found") {
+          setErrorMessage(`${result.message} Start a new Capture.`);
+          return;
+        }
+
         setErrorMessage(`${result.message} The label time remains saved.`);
         return;
       }

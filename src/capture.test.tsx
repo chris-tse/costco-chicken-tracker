@@ -367,6 +367,7 @@ describe("Capture", () => {
       sighting: createSavedSighting(),
     });
     const updateSightingDoneness = vi.fn().mockResolvedValue({
+      kind: "unavailable",
       message: "Unable to save doneness. Try again.",
       ok: false,
     });
@@ -385,6 +386,54 @@ describe("Capture", () => {
       screen.getByRole("heading", { name: "Sighting saved" })
     ).toBeTruthy();
     expect(screen.getByRole("button", { name: "Light" })).toBeEnabled();
+  });
+
+  it("keeps a not-found response distinct from a saved-sighting failure", async () => {
+    const saveSighting = vi.fn().mockResolvedValue({
+      ok: true,
+      sighting: createSavedSighting(),
+    });
+    const updateSightingDoneness = vi.fn().mockResolvedValue({
+      kind: "not-found",
+      message: "This sighting is no longer available.",
+      ok: false,
+    });
+    renderCapture(saveSighting, updateSightingDoneness);
+
+    fireEvent.click(screen.getByRole("button", { name: "Save label time" }));
+    await screen.findByRole("heading", { name: "Sighting saved" });
+    fireEvent.click(screen.getByRole("button", { name: "Dark" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "This sighting is no longer available"
+      );
+    });
+    expect(screen.getByRole("alert")).not.toHaveTextContent(
+      "label time remains saved"
+    );
+  });
+
+  it("keeps completion open when an enrichment request rejects", async () => {
+    const saveSighting = vi.fn().mockResolvedValue({
+      ok: true,
+      sighting: createSavedSighting(),
+    });
+    const updateSightingDoneness = vi
+      .fn()
+      .mockRejectedValue(new Error("Network unavailable"));
+    renderCapture(saveSighting, updateSightingDoneness);
+
+    fireEvent.click(screen.getByRole("button", { name: "Save label time" }));
+    await screen.findByRole("heading", { name: "Sighting saved" });
+    fireEvent.click(screen.getByRole("button", { name: "Dark" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "label time remains saved"
+      );
+    });
+    expect(screen.getByRole("button", { name: "Done" })).toBeEnabled();
   });
 
   it("returns to fresh Capture without enriching when Done is selected", async () => {
