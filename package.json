@@ -14,9 +14,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio",
-    "stores:sync": "bun run scripts/sync-stores.ts",
-    "db:seed": "bun run scripts/seed-stores.ts"
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@fontsource-variable/oswald": "^5.2.8",
@@ -24,7 +22,6 @@
     "@t3-oss/env-core": "^0.13.10",
     "@tanstack/react-router": "^1.162.6",
     "@tanstack/react-start": "^1.162.6",
-    "better-auth": "^1.4.18",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dotenv": "^17.3.1",
@@ -62,13 +59,5 @@
     "vite": "^7.3.1",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.0.18"
-  },
-  "ignoreScripts": [
-    "sharp",
-    "unrs-resolver"
-  ],
-  "trustedDependencies": [
-    "sharp",
-    "unrs-resolver"
-  ]
+  }
 }

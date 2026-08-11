@@ -5,8 +5,6 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 
-import { ThemeToggle } from "@/components/dev/ThemeToggle";
-
 import appCss from "./globals.css?url";
 
 export const Route = createRootRoute({
@@ -14,11 +12,10 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Costco Chicken Tracker" },
+      { title: "Chicken Tracking" },
       {
         name: "description",
-        content:
-          "Crowdsource Costco rotisserie chicken batch timestamps and view probability heatmaps for fresh chicken availability.",
+        content: "A private tool for tracking rotisserie chicken label times.",
       },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
@@ -33,13 +30,9 @@ function RootLayout() {
         <HeadContent />
       </head>
       <body className="antialiased">
-        <header>
-          <nav>{/* TODO: populate navigation links */}</nav>
-        </header>
         <main>
           <Outlet />
         </main>
-        <ThemeToggle />
         <Scripts />
       </body>
     </html>
