@@ -294,7 +294,10 @@ async function runFullJourney(page) {
   );
   await assertAccessibility(page, "Plan at 390px");
 
-  await page.getByRole("link", { name: "Capture" }).click();
+  await page
+    .getByRole("navigation", { name: "Primary navigation" })
+    .getByRole("link", { name: "Capture" })
+    .click();
   await expectVisible(
     page.getByRole("heading", { name: "Capture" }),
     "Capture before failure case"
