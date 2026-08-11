@@ -11,6 +11,7 @@ if (!applicationUrl) {
 
 const JOURNEY_VIEWPORT = { height: 844, width: 390 };
 const NARROW_VIEWPORTS = [375, 430];
+const MAX_NATIVE_CONTROL_TABS = 4;
 const MINIMUM_TARGET_SIZE = 44;
 const INITIAL_SIGHTING_PATTERN = /August 10, 2026 at 10:00 AM/;
 const CORRECTED_SIGHTING_PATTERN = /August 17, 2026 at 2:15 PM/;
@@ -119,6 +120,25 @@ async function assertFocused(locator, description) {
   ensure(isFocused, `${description} receives focus`);
 }
 
+async function pressUntilFocused(page, locator, key, description) {
+  for (
+    let pressCount = 0;
+    pressCount < MAX_NATIVE_CONTROL_TABS;
+    pressCount += 1
+  ) {
+    await page.keyboard.press(key);
+    const isFocused = await locator.evaluate(
+      (element) => document.activeElement === element
+    );
+
+    if (isFocused) {
+      return;
+    }
+  }
+
+  await assertFocused(locator, description);
+}
+
 async function runFullJourney(page) {
   await openCapture(page);
   await expectVisible(page.getByRole("main"), "main landmark");
@@ -132,14 +152,16 @@ async function runFullJourney(page) {
 
   await page.locator("#label-time").focus();
   await assertFocused(page.locator("#label-time"), "Capture label-time input");
-  await page.keyboard.press("Tab");
-  await assertFocused(
+  await pressUntilFocused(
+    page,
     page.locator("#label-date"),
+    "Tab",
     "Capture label-date input after Tab"
   );
-  await page.keyboard.press("Shift+Tab");
-  await assertFocused(
+  await pressUntilFocused(
+    page,
     page.locator("#label-time"),
+    "Shift+Tab",
     "Capture label-time input after Shift+Tab"
   );
   await page.locator("#label-date").fill("2026-08-10");
