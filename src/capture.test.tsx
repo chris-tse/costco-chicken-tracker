@@ -23,12 +23,32 @@ function renderCapture(saveSighting: CreateSighting): void {
   render(<CaptureForm now={() => DEFAULT_CLOCK} saveSighting={saveSighting} />);
 }
 
+function renderCaptureAt(
+  now: Date,
+  saveSighting: CreateSighting = vi.fn()
+): void {
+  render(<CaptureForm now={() => now} saveSighting={saveSighting} />);
+}
+
 describe("Capture", () => {
   it("defaults to the device's local date and minute", () => {
     renderCapture(vi.fn());
 
     expect(screen.getByLabelText("Label date")).toHaveValue("2026-08-11");
     expect(screen.getByLabelText("Label time")).toHaveValue("14:05");
+  });
+
+  it.each([
+    [new Date(2026, 0, 1, 0, 0), "2026-01-01", "00:00"],
+    [new Date(2026, 0, 31, 23, 59), "2026-01-31", "23:59"],
+    [new Date(2026, 1, 1, 0, 0), "2026-02-01", "00:00"],
+    [new Date(2026, 11, 31, 23, 59), "2026-12-31", "23:59"],
+    [new Date(2027, 0, 1, 0, 0), "2027-01-01", "00:00"],
+  ])("uses the new local day and minute across calendar boundaries: %s", (now, labelDate, labelTime) => {
+    renderCaptureAt(now);
+
+    expect(screen.getByLabelText("Label date")).toHaveValue(labelDate);
+    expect(screen.getByLabelText("Label time")).toHaveValue(labelTime);
   });
 
   it("warns but allows a label time outside store hours", async () => {
@@ -59,6 +79,30 @@ describe("Capture", () => {
       });
     });
     expect(screen.getByText(SAVED_LABEL_TIME_MESSAGE)).toBeTruthy();
+  });
+
+  it("submits when Enter is pressed from a label field", async () => {
+    const saveSighting = vi.fn().mockResolvedValue({
+      ok: true,
+      sighting: {
+        createdAt: new Date("2026-08-11T19:05:00.000Z"),
+        doneness: null,
+        id: 1,
+        labelDate: "2026-08-11",
+        labelMinute: 845,
+        updatedAt: new Date("2026-08-11T19:05:00.000Z"),
+      },
+    });
+    renderCapture(saveSighting);
+
+    fireEvent.submit(screen.getByRole("form", { name: "Capture label time" }));
+
+    await waitFor(() => {
+      expect(saveSighting).toHaveBeenCalledWith({
+        labelDate: "2026-08-11",
+        labelMinute: 845,
+      });
+    });
   });
 
   it("blocks invalid input before save", () => {
