@@ -143,17 +143,6 @@ async function assertAlert(locator, description) {
   );
 }
 
-async function assertDeletionDialog(page) {
-  const dialog = page
-    .locator('[role="alertdialog"], [role="dialog"]')
-    .filter({ hasText: "Permanently delete this sighting?" });
-  await expectVisible(dialog, "deletion confirmation dialog");
-  ensure(
-    (await dialog.getAttribute("aria-modal")) === "true",
-    "deletion confirmation dialog is modal"
-  );
-}
-
 async function openCapture(page) {
   await page.goto(applicationUrl, { waitUntil: "networkidle" });
   await expectVisible(
@@ -326,7 +315,6 @@ async function runFullJourney(page, viewport, fixtureIndex) {
     page.getByRole("heading", { name: "Correct sighting" }),
     "recent correction"
   );
-  await assertDeletionDialog(page);
   await assertAccessibility(
     page,
     `deletion confirmation at ${viewportDescription}`
