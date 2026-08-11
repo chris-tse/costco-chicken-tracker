@@ -90,9 +90,7 @@ export function CaptureForm({
   now?: () => Date;
   saveSighting: CreateSighting;
 }>): ReactNode {
-  const [labelTime, setLabelTime] = useState<LabelTime>(() =>
-    getDeviceLabelTime(now())
-  );
+  const [labelTime, setLabelTime] = useState<LabelTime>();
   const [errorMessage, setErrorMessage] = useState<string>();
   const [isSaving, setIsSaving] = useState(false);
   const [savedSighting, setSavedSighting] = useState<Sighting>();
@@ -100,6 +98,32 @@ export function CaptureForm({
   useEffect(() => {
     setLabelTime(getDeviceLabelTime(now()));
   }, [now]);
+
+  if (!labelTime) {
+    return (
+      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-4 py-8">
+        <header className="mb-8">
+          <p className="font-medium text-muted-foreground text-sm">
+            Chicken Tracking
+          </p>
+          <h1 className="mt-2 font-semibold text-4xl tracking-tight">
+            Capture
+          </h1>
+          <p className="mt-2 text-muted-foreground">
+            Record the label time exactly as printed.
+          </p>
+        </header>
+        <Card aria-busy="true">
+          <CardHeader>
+            <CardTitle>Label time</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <output aria-live="polite">Preparing capture form…</output>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const labelMinute = labelTimeToMinute(labelTime.labelTime);
   const outsideStoreHours = isOutsideStoreHours(labelMinute);
@@ -180,10 +204,13 @@ export function CaptureForm({
                 className="h-16 text-3xl"
                 id="label-time"
                 onChange={(event) => {
-                  setLabelTime((current) => ({
-                    ...current,
-                    labelTime: event.target.value,
-                  }));
+                  setLabelTime((current) => {
+                    if (!current) {
+                      return current;
+                    }
+
+                    return { ...current, labelTime: event.target.value };
+                  });
                 }}
                 required
                 type="time"
@@ -203,10 +230,13 @@ export function CaptureForm({
               <Input
                 id="label-date"
                 onChange={(event) => {
-                  setLabelTime((current) => ({
-                    ...current,
-                    labelDate: event.target.value,
-                  }));
+                  setLabelTime((current) => {
+                    if (!current) {
+                      return current;
+                    }
+
+                    return { ...current, labelDate: event.target.value };
+                  });
                 }}
                 required
                 type="date"

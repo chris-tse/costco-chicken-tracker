@@ -39,6 +39,9 @@ jobs:
       - name: Lint
         run: bun run lint
 
+      - name: Build
+        run: bun run build
+
       - name: Test
         run: bunx vitest run
         env:

@@ -7,30 +7,51 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
+import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { type CreateSighting, SAVE_FAILURE_MESSAGE } from "@/lib/sightings";
 
-import { CaptureForm } from "./app/index";
+const { mockSaveSighting, mockUseServerFn } = vi.hoisted(() => ({
+  mockSaveSighting: vi.fn(),
+  mockUseServerFn: vi.fn(),
+}));
+
+vi.mock("@tanstack/react-start", async (importOriginal) => ({
+  ...(await importOriginal()),
+  useServerFn: mockUseServerFn,
+}));
+
+import { CaptureForm, CapturePage, getDeviceLabelTime } from "./app/index";
 
 const DEFAULT_CLOCK = new Date(2026, 7, 11, 14, 5);
 const SAVED_LABEL_TIME_MESSAGE =
   /Saved label time for August 11, 2026 at 8:00 AM/;
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+  vi.useRealTimers();
+});
 
 function renderCapture(saveSighting: CreateSighting): void {
   render(<CaptureForm now={() => DEFAULT_CLOCK} saveSighting={saveSighting} />);
 }
 
-function renderCaptureAt(
-  now: Date,
-  saveSighting: CreateSighting = vi.fn()
-): void {
-  render(<CaptureForm now={() => now} saveSighting={saveSighting} />);
-}
-
 describe("Capture", () => {
+  it("does not read a server-local clock while rendering the hydration-safe pending state", () => {
+    const unavailableServerClock = (): Date => {
+      throw new Error("The device clock is only available in the browser.");
+    };
+
+    const html = renderToString(
+      <CaptureForm now={unavailableServerClock} saveSighting={vi.fn()} />
+    );
+
+    expect(html).toContain("Preparing capture form");
+    expect(html).not.toContain('type="time"');
+  });
+
   it("defaults to the device's local date and minute", () => {
     renderCapture(vi.fn());
 
@@ -38,17 +59,57 @@ describe("Capture", () => {
     expect(screen.getByLabelText("Label time")).toHaveValue("14:05");
   });
 
-  it.each([
-    [new Date(2026, 0, 1, 0, 0), "2026-01-01", "00:00"],
-    [new Date(2026, 0, 31, 23, 59), "2026-01-31", "23:59"],
-    [new Date(2026, 1, 1, 0, 0), "2026-02-01", "00:00"],
-    [new Date(2026, 11, 31, 23, 59), "2026-12-31", "23:59"],
-    [new Date(2027, 0, 1, 0, 0), "2027-01-01", "00:00"],
-  ])("uses the new local day and minute across calendar boundaries: %s", (now, labelDate, labelTime) => {
-    renderCaptureAt(now);
+  it("uses the current local day and minute as a controlled clock crosses boundaries", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 11, 31, 23, 59));
 
-    expect(screen.getByLabelText("Label date")).toHaveValue(labelDate);
-    expect(screen.getByLabelText("Label time")).toHaveValue(labelTime);
+    expect(getDeviceLabelTime(new Date())).toEqual({
+      labelDate: "2026-12-31",
+      labelTime: "23:59",
+    });
+
+    vi.advanceTimersByTime(60_000);
+
+    expect(getDeviceLabelTime(new Date())).toEqual({
+      labelDate: "2027-01-01",
+      labelTime: "00:00",
+    });
+
+    vi.advanceTimersByTime(31 * 24 * 60 * 60 * 1000);
+
+    expect(getDeviceLabelTime(new Date())).toEqual({
+      labelDate: "2027-02-01",
+      labelTime: "00:00",
+    });
+
+    vi.useRealTimers();
+  });
+
+  it("submits through the CapturePage server-function wiring", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(DEFAULT_CLOCK);
+    mockUseServerFn.mockReturnValue(mockSaveSighting);
+    mockSaveSighting.mockResolvedValue({
+      ok: true,
+      sighting: {
+        createdAt: DEFAULT_CLOCK,
+        doneness: null,
+        id: 1,
+        labelDate: "2026-08-11",
+        labelMinute: 845,
+        updatedAt: DEFAULT_CLOCK,
+      },
+    });
+
+    render(<CapturePage />);
+
+    expect(screen.getByLabelText("Label date")).toHaveValue("2026-08-11");
+    fireEvent.submit(screen.getByRole("form", { name: "Capture label time" }));
+    await Promise.resolve();
+
+    expect(mockSaveSighting).toHaveBeenCalledWith({
+      data: { labelDate: "2026-08-11", labelMinute: 845 },
+    });
   });
 
   it("warns but allows a label time outside store hours", async () => {
