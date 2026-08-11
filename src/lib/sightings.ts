@@ -46,7 +46,57 @@ export type UpdateSightingDoneness = (
   input: UpdateSightingDonenessInput
 ) => Promise<UpdateSightingDonenessResult>;
 
+export const sightingIdSchema = z.int().positive();
+
+export const correctSightingInputSchema = createSightingInputSchema.extend({
+  doneness: z.enum(DONENESS_VALUES).nullable(),
+  id: sightingIdSchema,
+});
+
+export type CorrectSightingInput = z.infer<typeof correctSightingInputSchema>;
+
+export type CorrectSightingResult =
+  | { ok: true; sighting: Sighting }
+  | { kind: "not-found"; message: string; ok: false }
+  | { kind: "unavailable"; message: string; ok: false };
+
+export type CorrectSighting = (
+  input: CorrectSightingInput
+) => Promise<CorrectSightingResult>;
+
+export type ReadSightingResult =
+  | { ok: true; sighting: Sighting }
+  | { kind: "not-found"; message: string; ok: false }
+  | { kind: "unavailable"; message: string; ok: false };
+
+export type GetSighting = (id: number) => Promise<ReadSightingResult>;
+
+export type ListRecentSightingsResult =
+  | { ok: true; sightings: Sighting[] }
+  | { kind: "unavailable"; message: string; ok: false };
+
+export type ListRecentSightings = () => Promise<ListRecentSightingsResult>;
+
+export type DeleteSightingResult =
+  | { ok: true }
+  | { kind: "not-found"; message: string; ok: false }
+  | { kind: "unavailable"; message: string; ok: false };
+
+export type DeleteSighting = (id: number) => Promise<DeleteSightingResult>;
+
 export const SAVE_FAILURE_MESSAGE =
   "Unable to save label time. Check your connection and try again.";
 
 export const DONENESS_FAILURE_MESSAGE = "Unable to save doneness. Try again.";
+
+export const CORRECTION_FAILURE_MESSAGE =
+  "Unable to save this correction. Try again.";
+
+export const DELETE_FAILURE_MESSAGE =
+  "Unable to delete this sighting. Try again.";
+
+export const RECENT_SIGHTINGS_FAILURE_MESSAGE =
+  "Unable to load recent sightings. Try again.";
+
+export const SIGHTING_NOT_FOUND_MESSAGE =
+  "This sighting is no longer available.";

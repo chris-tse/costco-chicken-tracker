@@ -1,31 +1,44 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
   type FormEvent,
   type ReactNode,
+  useCallback,
   useEffect,
   useRef,
   useState,
 } from "react";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { saveSighting, updateSightingDoneness } from "@/lib/sighting-functions";
+import {
+  getSighting,
+  listRecentSightings,
+  saveSighting,
+  updateSightingDoneness,
+} from "@/lib/sighting-functions";
 import {
   type CreateSighting,
   type CreateSightingInput,
   createSightingInputSchema,
   DONENESS_FAILURE_MESSAGE,
   DONENESS_VALUES,
+  type GetSighting,
+  type ListRecentSightings,
+  RECENT_SIGHTINGS_FAILURE_MESSAGE,
   SAVE_FAILURE_MESSAGE,
   type Sighting,
   type UpdateSightingDoneness,
 } from "@/lib/sightings";
 
 export const Route = createFileRoute("/")({
-  component: CapturePage,
+  component: CaptureRoute,
+  validateSearch: z.object({
+    completion: z.coerce.number().int().positive().optional(),
+  }),
 });
 
 // biome-ignore lint/style/useConsistentTypeDefinitions: AGENTS.md prefers types unless extending.
@@ -83,17 +96,80 @@ function formatSavedLabelTime(sighting: Sighting): string {
   return `Saved label time for ${formattedDate} at ${time}.`;
 }
 
+function formatRecentSighting(sighting: Sighting): string {
+  return formatSavedLabelTime(sighting).replace("Saved label time for ", "");
+}
+
+function CaptureRoute(): ReactNode {
+  const { completion } = Route.useSearch();
+  const navigate = useNavigate();
+  const get = useServerFn(getSighting);
+  const listRecent = useServerFn(listRecentSightings);
+  const save = useServerFn(saveSighting);
+  const updateDoneness = useServerFn(updateSightingDoneness);
+  const saveSightingFromRoute = useCallback<CreateSighting>(
+    async (input) => {
+      return await save({ data: input });
+    },
+    [save]
+  );
+  const updateSightingDonenessFromRoute = useCallback<UpdateSightingDoneness>(
+    async (input) => {
+      return await updateDoneness({ data: input });
+    },
+    [updateDoneness]
+  );
+  const getSightingFromRoute = useCallback<GetSighting>(
+    async (id) => {
+      return await get({ data: id });
+    },
+    [get]
+  );
+  const listRecentSightingsFromRoute =
+    useCallback<ListRecentSightings>(async () => {
+      return await listRecent();
+    }, [listRecent]);
+
+  return (
+    <CaptureForm
+      getSighting={getSightingFromRoute}
+      initialCompletionId={completion}
+      listRecentSightings={listRecentSightingsFromRoute}
+      onOpenCompletionCorrection={async (id) => {
+        await navigate({
+          params: { sightingId: id.toString() },
+          search: { from: "completion" },
+          to: "/sightings/$sightingId",
+        });
+      }}
+      onOpenRecentCorrection={async (id) => {
+        await navigate({
+          params: { sightingId: id.toString() },
+          search: { from: "capture" },
+          to: "/sightings/$sightingId",
+        });
+      }}
+      saveSighting={saveSightingFromRoute}
+      updateSightingDoneness={updateSightingDonenessFromRoute}
+    />
+  );
+}
+
 export function CapturePage(): ReactNode {
   const save = useServerFn(saveSighting);
   const updateDoneness = useServerFn(updateSightingDoneness);
-  const saveSightingFromRoute: CreateSighting = async (input) => {
-    return await save({ data: input });
-  };
-  const updateSightingDonenessFromRoute: UpdateSightingDoneness = async (
-    input
-  ) => {
-    return await updateDoneness({ data: input });
-  };
+  const saveSightingFromRoute = useCallback<CreateSighting>(
+    async (input) => {
+      return await save({ data: input });
+    },
+    [save]
+  );
+  const updateSightingDonenessFromRoute = useCallback<UpdateSightingDoneness>(
+    async (input) => {
+      return await updateDoneness({ data: input });
+    },
+    [updateDoneness]
+  );
 
   return (
     <CaptureForm
@@ -104,22 +180,111 @@ export function CapturePage(): ReactNode {
 }
 
 export function CaptureForm({
+  getSighting,
+  initialCompletionId,
+  listRecentSightings,
   now = getCurrentDeviceTime,
+  onOpenCompletionCorrection,
+  onOpenRecentCorrection,
   saveSighting,
   updateSightingDoneness,
 }: Readonly<{
+  getSighting?: GetSighting;
+  initialCompletionId?: number;
+  listRecentSightings?: ListRecentSightings;
   now?: () => Date;
+  onOpenCompletionCorrection?: (id: number) => void;
+  onOpenRecentCorrection?: (id: number) => void;
   saveSighting: CreateSighting;
   updateSightingDoneness?: UpdateSightingDoneness;
 }>): ReactNode {
   const [labelTime, setLabelTime] = useState<LabelTime>();
   const [errorMessage, setErrorMessage] = useState<string>();
   const [isSaving, setIsSaving] = useState(false);
+  const [recentErrorMessage, setRecentErrorMessage] = useState<string>();
+  const [recentRefreshKey, setRecentRefreshKey] = useState(0);
+  const [recentSightings, setRecentSightings] = useState<Sighting[]>();
   const [savedSighting, setSavedSighting] = useState<Sighting>();
 
   useEffect(() => {
     setLabelTime(getDeviceLabelTime(now()));
   }, [now]);
+
+  useEffect(() => {
+    if (!listRecentSightings) {
+      return;
+    }
+
+    let active = true;
+    if (recentRefreshKey > 0) {
+      setRecentSightings(undefined);
+    }
+    const loadRecentSightings = async (): Promise<void> => {
+      try {
+        const result = await listRecentSightings();
+        if (!active) {
+          return;
+        }
+
+        if (!result.ok) {
+          setRecentErrorMessage(result.message);
+          return;
+        }
+
+        setRecentErrorMessage(undefined);
+        setRecentSightings(result.sightings);
+      } catch {
+        if (active) {
+          setRecentErrorMessage(RECENT_SIGHTINGS_FAILURE_MESSAGE);
+        }
+      }
+    };
+
+    loadRecentSightings().catch(() => {
+      if (active) {
+        setRecentErrorMessage(RECENT_SIGHTINGS_FAILURE_MESSAGE);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [listRecentSightings, recentRefreshKey]);
+
+  useEffect(() => {
+    if (!(initialCompletionId && getSighting)) {
+      return;
+    }
+
+    let active = true;
+    const loadCompletion = async (): Promise<void> => {
+      try {
+        const result = await getSighting(initialCompletionId);
+        if (!active) {
+          return;
+        }
+
+        if (result.ok) {
+          setSavedSighting(result.sighting);
+          return;
+        }
+
+        setErrorMessage(result.message);
+      } catch {
+        if (active) {
+          setErrorMessage(RECENT_SIGHTINGS_FAILURE_MESSAGE);
+        }
+      }
+    };
+
+    loadCompletion().catch(() => {
+      if (active) {
+        setErrorMessage(RECENT_SIGHTINGS_FAILURE_MESSAGE);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [getSighting, initialCompletionId]);
 
   if (savedSighting && updateSightingDoneness) {
     return (
@@ -127,8 +292,10 @@ export function CaptureForm({
         onDone={() => {
           setErrorMessage(undefined);
           setLabelTime(getDeviceLabelTime(now()));
+          setRecentRefreshKey((refreshKey) => refreshKey + 1);
           setSavedSighting(undefined);
         }}
+        onOpenCorrection={onOpenCompletionCorrection}
         sighting={savedSighting}
         updateSightingDoneness={updateSightingDoneness}
       />
@@ -301,16 +468,78 @@ export function CaptureForm({
           </form>
         </CardContent>
       </Card>
+      {listRecentSightings ? (
+        <RecentSightings
+          errorMessage={recentErrorMessage}
+          onOpenCorrection={onOpenRecentCorrection}
+          sightings={recentSightings}
+        />
+      ) : null}
     </div>
+  );
+}
+
+function RecentSightings({
+  errorMessage,
+  onOpenCorrection,
+  sightings,
+}: Readonly<{
+  errorMessage?: string;
+  onOpenCorrection?: (id: number) => void;
+  sightings?: Sighting[];
+}>): ReactNode {
+  return (
+    <section aria-labelledby="recent-sightings-heading" className="mt-8">
+      <h2
+        className="font-semibold text-2xl tracking-tight"
+        id="recent-sightings-heading"
+      >
+        Recent Sightings
+      </h2>
+      {errorMessage ? (
+        <p className="mt-3 text-destructive text-sm" role="alert">
+          {errorMessage}
+        </p>
+      ) : null}
+      {errorMessage || sightings ? null : (
+        <output
+          aria-live="polite"
+          className="mt-3 text-muted-foreground text-sm"
+        >
+          Loading recent sightings…
+        </output>
+      )}
+      {sightings?.length === 0 ? (
+        <p className="mt-3 text-muted-foreground text-sm">No sightings yet.</p>
+      ) : null}
+      {sightings && sightings.length > 0 ? (
+        <ul className="mt-3 grid gap-3">
+          {sightings.slice(0, 3).map((sighting) => (
+            <li key={sighting.id}>
+              <Button
+                className="h-auto min-h-12 w-full justify-start whitespace-normal py-3 text-left text-base"
+                onClick={() => onOpenCorrection?.(sighting.id)}
+                type="button"
+                variant="outline"
+              >
+                {formatRecentSighting(sighting)}
+              </Button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </section>
   );
 }
 
 function SightingCompletion({
   onDone,
+  onOpenCorrection,
   sighting,
   updateSightingDoneness,
 }: Readonly<{
   onDone: () => void;
+  onOpenCorrection?: (id: number) => void;
   sighting: Sighting;
   updateSightingDoneness: UpdateSightingDoneness;
 }>): ReactNode {
@@ -442,6 +671,15 @@ function SightingCompletion({
             type="button"
           >
             Done
+          </Button>
+          <Button
+            className="h-12 text-base"
+            disabled={isUpdating}
+            onClick={() => onOpenCorrection?.(currentSighting.id)}
+            type="button"
+            variant="outline"
+          >
+            Correct this sighting
           </Button>
         </CardContent>
       </Card>

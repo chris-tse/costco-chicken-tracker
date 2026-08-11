@@ -459,6 +459,30 @@ describe("Capture", () => {
     expect(screen.getByLabelText("Label time")).toHaveValue("14:05");
   });
 
+  it("opens the identity-addressed correction flow from completion", async () => {
+    const saveSighting = vi.fn().mockResolvedValue({
+      ok: true,
+      sighting: createSavedSighting(),
+    });
+    const onOpenCompletionCorrection = vi.fn();
+    render(
+      <CaptureForm
+        now={() => DEFAULT_CLOCK}
+        onOpenCompletionCorrection={onOpenCompletionCorrection}
+        saveSighting={saveSighting}
+        updateSightingDoneness={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Save label time" }));
+    await screen.findByRole("heading", { name: "Sighting saved" });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Correct this sighting" })
+    );
+
+    expect(onOpenCompletionCorrection).toHaveBeenCalledWith(1);
+  });
+
   it("leaves the durable creation intact when completion is interrupted", async () => {
     const saveSighting = vi.fn().mockResolvedValue({
       ok: true,

@@ -4,7 +4,7 @@
   "overrides": [
     {
       // TanStack Start catch-all route convention uses $.ts filenames
-      "includes": ["**/$.ts", "**/$.tsx"],
+      "includes": ["**/$.ts", "**/$.tsx", "**/$*.ts", "**/$*.tsx"],
       "linter": {
         "rules": {
           "style": {
