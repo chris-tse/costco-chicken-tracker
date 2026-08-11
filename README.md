@@ -21,3 +21,19 @@ and `bun run build`.
 
 `DATABASE_URL` is the only required application secret. PostgreSQL provisioning,
 backups, private access, TLS, and routing are operator responsibilities.
+
+## Self-hosted container
+
+The production image is a stateless, plain-HTTP OCI container. It runs migrations before
+serving and exposes database-aware `GET /health` readiness. Use a pinned GHCR image digest in
+production, keep the previous known-good digest for rollback, and provide only `DATABASE_URL`:
+
+```bash
+docker run --rm -p 3000:3000 \
+  --env DATABASE_URL="postgresql://app_user:password@postgres.example:5432/chicken_tracking" \
+  ghcr.io/chris-tse/costco-chicken-tracker@sha256:<published-digest>
+```
+
+For a controlled migration/recovery step, append `migrate` to the same command. Full deployment,
+gateway, rollback, provisioning, backup, and tested-restore guidance is in
+[the self-hosted operations guide](docs/operations.md).
