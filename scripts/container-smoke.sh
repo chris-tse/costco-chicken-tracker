@@ -98,7 +98,7 @@ done
 APP_HTTP_PORT="$(docker port "$APP_NAME" 3000/tcp | sed 's/.*://')"
 curl --fail --silent --show-error "http://127.0.0.1:${APP_HTTP_PORT}/" | grep --quiet "Capture"
 curl --fail --silent --show-error "http://127.0.0.1:${APP_HTTP_PORT}/plan" | grep --quiet "Plan"
-node ./scripts/assembled-smoke.mjs "http://127.0.0.1:${APP_HTTP_PORT}"
+node ./scripts/acceptance-journey.mjs "http://127.0.0.1:${APP_HTTP_PORT}"
 
 docker stop "$DATABASE_NAME" >/dev/null
 if curl --fail --silent "http://127.0.0.1:${APP_HTTP_PORT}/health"; then

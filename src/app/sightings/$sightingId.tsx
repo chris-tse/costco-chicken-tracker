@@ -465,6 +465,7 @@ export function CorrectionEditor({
             <div className="grid gap-2">
               <Label htmlFor="correction-label-date">Label date</Label>
               <Input
+                className="h-12 text-base"
                 id="correction-label-date"
                 onChange={(event) =>
                   updateFields({ labelDate: event.target.value })

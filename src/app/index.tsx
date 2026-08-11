@@ -137,6 +137,9 @@ function CaptureRoute(): ReactNode {
       getSighting={getSightingFromRoute}
       initialCompletionId={completion}
       listRecentSightings={listRecentSightingsFromRoute}
+      onDone={async () =>
+        await navigate({ replace: true, search: {}, to: "/" })
+      }
       onOpenCompletionCorrection={async (id) => {
         await navigate({
           params: { sightingId: id.toString() },
@@ -186,6 +189,7 @@ export function CaptureForm({
   initialCompletionId,
   listRecentSightings,
   now = getCurrentDeviceTime,
+  onDone,
   onOpenCompletionCorrection,
   onOpenRecentCorrection,
   saveSighting,
@@ -195,6 +199,7 @@ export function CaptureForm({
   initialCompletionId?: number;
   listRecentSightings?: ListRecentSightings;
   now?: () => Date;
+  onDone?: () => Promise<void> | void;
   onOpenCompletionCorrection?: (id: number) => Promise<void> | void;
   onOpenRecentCorrection?: (id: number) => Promise<void> | void;
   saveSighting: CreateSighting;
@@ -296,6 +301,7 @@ export function CaptureForm({
           setLabelTime(getDeviceLabelTime(now()));
           setRecentRefreshKey((refreshKey) => refreshKey + 1);
           setSavedSighting(undefined);
+          return onDone?.();
         }}
         onOpenCorrection={onOpenCompletionCorrection}
         sighting={savedSighting}
@@ -434,6 +440,7 @@ export function CaptureForm({
             <div className="grid gap-2">
               <Label htmlFor="label-date">Label date</Label>
               <Input
+                className="h-12 text-base"
                 id="label-date"
                 onChange={(event) => {
                   setLabelTime((current) => {
@@ -563,7 +570,7 @@ function SightingCompletion({
   sighting,
   updateSightingDoneness,
 }: Readonly<{
-  onDone: () => void;
+  onDone: () => Promise<void> | void;
   onOpenCorrection?: (id: number) => Promise<void> | void;
   sighting: Sighting;
   updateSightingDoneness: UpdateSightingDoneness;
@@ -716,7 +723,7 @@ function SightingCompletion({
           <Button
             className="h-12 text-base"
             disabled={isUpdating}
-            onClick={onDone}
+            onClick={async () => await onDone()}
             type="button"
           >
             Done
