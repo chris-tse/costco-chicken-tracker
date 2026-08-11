@@ -286,7 +286,7 @@ async function runFullJourney(page) {
     page.getByRole("heading", { name: "No history for this weekday" }),
     "no-weekday-history state"
   );
-  await page.getByLabel("Weekday", { exact: true }).selectOption("0");
+  await page.getByLabel("Weekday", { exact: true }).selectOption("1");
   await page.getByLabel("Approximate time").fill("10:00");
   await expectVisible(
     page.getByRole("heading", { name: "Not enough history to compare yet" }),
