@@ -10,12 +10,18 @@
 
 import { Route as rootRouteImport } from './app/__root'
 import { Route as PlanRouteImport } from './app/plan'
+import { Route as HealthRouteImport } from './app/health'
 import { Route as IndexRouteImport } from './app/index'
 import { Route as SightingsSightingIdRouteImport } from './app/sightings/$sightingId'
 
 const PlanRoute = PlanRouteImport.update({
   id: '/plan',
   path: '/plan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HealthRoute = HealthRouteImport.update({
+  id: '/health',
+  path: '/health',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -31,30 +37,34 @@ const SightingsSightingIdRoute = SightingsSightingIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/health': typeof HealthRoute
   '/plan': typeof PlanRoute
   '/sightings/$sightingId': typeof SightingsSightingIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/health': typeof HealthRoute
   '/plan': typeof PlanRoute
   '/sightings/$sightingId': typeof SightingsSightingIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/health': typeof HealthRoute
   '/plan': typeof PlanRoute
   '/sightings/$sightingId': typeof SightingsSightingIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/plan' | '/sightings/$sightingId'
+  fullPaths: '/' | '/health' | '/plan' | '/sightings/$sightingId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/plan' | '/sightings/$sightingId'
-  id: '__root__' | '/' | '/plan' | '/sightings/$sightingId'
+  to: '/' | '/health' | '/plan' | '/sightings/$sightingId'
+  id: '__root__' | '/' | '/health' | '/plan' | '/sightings/$sightingId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  HealthRoute: typeof HealthRoute
   PlanRoute: typeof PlanRoute
   SightingsSightingIdRoute: typeof SightingsSightingIdRoute
 }
@@ -66,6 +76,13 @@ declare module '@tanstack/react-router' {
       path: '/plan'
       fullPath: '/plan'
       preLoaderRoute: typeof PlanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/health': {
+      id: '/health'
+      path: '/health'
+      fullPath: '/health'
+      preLoaderRoute: typeof HealthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -87,6 +104,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  HealthRoute: HealthRoute,
   PlanRoute: PlanRoute,
   SightingsSightingIdRoute: SightingsSightingIdRoute,
 }
