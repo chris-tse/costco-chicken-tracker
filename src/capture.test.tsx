@@ -301,7 +301,9 @@ describe("Capture", () => {
     const completionHeading = await screen.findByRole("heading", {
       name: "Sighting saved",
     });
-    expect(completionHeading).toHaveFocus();
+    await waitFor(() => {
+      expect(completionHeading).toHaveFocus();
+    });
     expect(completionHeading).toHaveAttribute("tabindex", "-1");
     expect(screen.getByText(COMPLETION_LABEL_TIME_MESSAGE)).toBeTruthy();
     expect(screen.queryByRole("heading", { name: "Capture" })).toBeNull();
