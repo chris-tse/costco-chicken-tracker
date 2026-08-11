@@ -1,6 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { type FormEvent, type ReactNode, useEffect, useState } from "react";
+import {
+  type FormEvent,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -308,9 +314,15 @@ function SightingCompletion({
   sighting: Sighting;
   updateSightingDoneness: UpdateSightingDoneness;
 }>): ReactNode {
+  const completionHeadingRef = useRef<HTMLHeadingElement>(null);
   const [currentSighting, setCurrentSighting] = useState(sighting);
   const [errorMessage, setErrorMessage] = useState<string>();
   const [isUpdating, setIsUpdating] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string>();
+
+  useEffect(() => {
+    completionHeadingRef.current?.focus();
+  }, []);
 
   const saveDoneness = async (
     doneness: Sighting["doneness"]
@@ -320,6 +332,7 @@ function SightingCompletion({
     }
 
     setErrorMessage(undefined);
+    setSuccessMessage(undefined);
     setIsUpdating(true);
     try {
       const result = await updateSightingDoneness({
@@ -338,6 +351,11 @@ function SightingCompletion({
       }
 
       setCurrentSighting(result.sighting);
+      setSuccessMessage(
+        doneness === null
+          ? "Doneness cleared."
+          : `Doneness saved as ${doneness}.`
+      );
     } catch {
       setErrorMessage(
         `${DONENESS_FAILURE_MESSAGE} The label time remains saved.`
@@ -353,7 +371,11 @@ function SightingCompletion({
         <p className="font-medium text-muted-foreground text-sm">
           Chicken Tracking
         </p>
-        <h1 className="mt-2 font-semibold text-4xl tracking-tight">
+        <h1
+          className="mt-2 font-semibold text-4xl tracking-tight"
+          ref={completionHeadingRef}
+          tabIndex={-1}
+        >
           Sighting saved
         </h1>
         <p className="mt-2 text-muted-foreground">
@@ -398,6 +420,11 @@ function SightingCompletion({
           </fieldset>
           {isUpdating ? (
             <output aria-live="polite">Saving doneness…</output>
+          ) : null}
+          {successMessage ? (
+            <output aria-atomic="true" aria-live="polite">
+              {successMessage}
+            </output>
           ) : null}
           {errorMessage ? (
             <p
