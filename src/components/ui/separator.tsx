@@ -1,7 +1,9 @@
 "use client";
 
-import { Separator as SeparatorPrimitive } from "radix-ui";
+// biome-ignore assist/source/organizeImports: Imports follow the repository's documented group order.
 import type * as React from "react";
+
+import { Separator as SeparatorPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/utils";
 
