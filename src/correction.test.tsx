@@ -137,6 +137,47 @@ describe("Correction", () => {
     expect(onSaved).toHaveBeenCalledWith(correctedSighting);
   });
 
+  it("does not repeat a saved correction when returning to the origin fails", async () => {
+    const correctedSighting = {
+      ...DEFAULT_SIGHTING,
+      labelMinute: 480,
+    };
+    const correctSighting = vi.fn().mockResolvedValue({
+      ok: true,
+      sighting: correctedSighting,
+    });
+    const onSaved = vi
+      .fn<(sighting: Sighting) => Promise<void>>()
+      .mockRejectedValueOnce(new Error("Navigation unavailable"))
+      .mockResolvedValueOnce(undefined);
+    renderCorrection({ correctSighting, onSaved });
+
+    await screen.findByLabelText("Label date");
+    fireEvent.change(screen.getByLabelText("Label time"), {
+      target: { value: "08:00" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save correction" }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: "Correction saved" })
+      ).toHaveFocus();
+    });
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Correction saved, but unable to return to Capture. Try again."
+    );
+    expect(screen.queryByLabelText("Label date")).toBeNull();
+    expect(correctSighting).toHaveBeenCalledTimes(1);
+    expect(onSaved).toHaveBeenCalledWith(correctedSighting);
+
+    fireEvent.click(screen.getByRole("button", { name: "Return to Capture" }));
+
+    await waitFor(() => {
+      expect(onSaved).toHaveBeenCalledTimes(2);
+    });
+    expect(correctSighting).toHaveBeenCalledTimes(1);
+  });
+
   it("cancels without mutating the sighting", async () => {
     const { correctSighting, deleteSighting, onCancel } = renderCorrection();
 
@@ -249,6 +290,43 @@ describe("Correction", () => {
       expect(deleteSighting).toHaveBeenCalledWith(7);
     });
     expect(onDeleted).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not repeat a completed deletion when returning to the origin fails", async () => {
+    const deleteSighting = vi.fn().mockResolvedValue({ ok: true });
+    const onDeleted = vi
+      .fn<() => Promise<void>>()
+      .mockRejectedValueOnce(new Error("Navigation unavailable"))
+      .mockResolvedValueOnce(undefined);
+    renderCorrection({ deleteSighting, onDeleted });
+
+    await screen.findByLabelText("Label date");
+    fireEvent.click(screen.getByRole("button", { name: "Delete sighting" }));
+    fireEvent.click(screen.getByRole("button", { name: "Permanently delete" }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: "Sighting deleted" })
+      ).toHaveFocus();
+    });
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Sighting deleted, but unable to return to Capture. Try again."
+    );
+    expect(
+      screen.queryByRole("button", { name: "Delete sighting" })
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Permanently delete" })
+    ).toBeNull();
+    expect(deleteSighting).toHaveBeenCalledTimes(1);
+    expect(onDeleted).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "Return to Capture" }));
+
+    await waitFor(() => {
+      expect(onDeleted).toHaveBeenCalledTimes(2);
+    });
+    expect(deleteSighting).toHaveBeenCalledTimes(1);
   });
 
   it("keeps the editor and sighting visible when deletion fails", async () => {
