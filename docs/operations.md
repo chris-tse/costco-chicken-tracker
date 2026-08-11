@@ -18,10 +18,10 @@ The publishing workflow applies:
 - `sha-<12-character-commit>` for every published commit; and
 - a release tag such as `v1.2.3` when the corresponding Git tag is pushed.
 
-`latest` is a convenience tag, never a production deployment target. Deploy a known release
-by immutable image digest (preferred) or its immutable SHA/release tag, and record the exact
-digest in the operator's deployment configuration. Retain the previous known-good image digest
-until the new release has been proven healthy.
+All tags are movable convenience references, including SHA and release tags. Only a container
+digest identifies immutable image content. Production deployments must pin an image digest and
+record it in deployment configuration. Retain the previous known-good image digest until the
+new release has been proven healthy.
 
 ```bash
 docker pull ghcr.io/chris-tse/costco-chicken-tracker@sha256:<published-digest>
@@ -37,8 +37,9 @@ non-secret environment settings; the image defaults to `3000` and `0.0.0.0`.
 ## Startup, migration, and health
 
 The default `serve` command applies the committed, forward-only migrations before starting the
-web process. A missing `DATABASE_URL`, inability to reach PostgreSQL, or migration error causes
-the process to exit without serving HTTP.
+web process. A PostgreSQL advisory lock serializes migration discovery and application across
+concurrently starting containers. A missing `DATABASE_URL`, inability to reach PostgreSQL,
+migration-history hash drift, or migration error causes the process to exit without serving HTTP.
 
 Use the standalone command for manual recovery or a controlled migration step:
 
@@ -59,12 +60,17 @@ deployed or rolled back alongside the preceding Capture-and-Plan release. Future
 must use additive/compatible expansion before a later cleanup release; never rely on an image
 rollback to reverse an already-applied migration.
 
+The migrator treats the timestamp in a committed migration directory as its identity and stores
+the SHA-256 content hash. It rejects malformed or colliding migration identities, duplicate
+applied identities, and any mismatch between an applied hash and the image's committed file.
+Never edit, rename, or reuse a committed migration after it has reached an environment; add a
+new forward migration instead.
+
 ## Rollout and rollback
 
 1. Record the running digest as the rollback target and choose a new pinned digest.
 2. Run the new image's `migrate` command against the production database, or allow its
-   fail-closed startup to do the same once the deployment controller is configured for a single
-   rollout instance.
+   fail-closed startup to do the same. Concurrent starts wait on the PostgreSQL migration lock.
 3. Start the new image, wait for `/health` to return 200, then send gateway traffic to it.
 4. Confirm Capture and Plan work through the private gateway before retiring the previous
    image.
@@ -87,9 +93,25 @@ a private-access policy at the gateway.
 
 ## PostgreSQL, backups, and restore
 
-Provision PostgreSQL separately with a minimally privileged application role and a database that
-is reachable from the app's private network. Store `DATABASE_URL` in the platform's secret
-manager; never bake it into an image, commit it, or place it in a URL that appears in logs.
+Provision PostgreSQL separately with a database owner role that is reachable from the app's
+private network. The default startup path runs migrations as `DATABASE_URL`, so this role needs
+to create the `drizzle` schema and migration table and execute every committed migration's DDL.
+It is intentionally not a DML-only least-privilege role. Keep that authority bounded to this
+dedicated application database: do not grant superuser, `CREATEDB`, `CREATEROLE`, or access to
+other application databases.
+
+For example, an administrator can create a dedicated non-superuser owner once, then use that
+role in the sole required `DATABASE_URL` secret:
+
+```sql
+CREATE ROLE chicken_tracking LOGIN PASSWORD '<generated-password>'
+  NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
+CREATE DATABASE chicken_tracking OWNER chicken_tracking;
+```
+
+The image's smoke test exercises this non-superuser-owner workflow. Store `DATABASE_URL` in the
+platform's secret manager; never bake it into an image, commit it, or place it in a URL that
+appears in logs.
 
 Take logical or physical PostgreSQL backups at least daily, retain at least seven daily restore
 points, and monitor backup completion and storage capacity. The backup system is the operator's

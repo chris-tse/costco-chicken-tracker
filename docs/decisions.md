@@ -206,9 +206,9 @@ configured through a required `DATABASE_URL` environment variable.
 
 **Decision:**
 
-- Publish a public image to GitHub Container Registry with a convenience `latest` tag and
-  immutable version tags. Production deployments should pin a version tag and retain the
-  previous known-good image for rollback.
+- Publish a public image to GitHub Container Registry with convenience `latest`, SHA, and
+  version tags. Tags are movable; production deployments must pin an image digest and retain
+  the previous known-good digest for rollback.
 - Apply committed Drizzle migrations before the web server starts. A migration failure stops
   startup, and a standalone migration command remains available for recovery.
 - Keep runtime configuration in environment variables. `DATABASE_URL` is the sole required
