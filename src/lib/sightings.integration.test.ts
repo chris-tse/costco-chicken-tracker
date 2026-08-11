@@ -158,6 +158,7 @@ if (databaseUrl) {
         await expect(
           operations.updateDoneness({ doneness: "light", id: 99 })
         ).resolves.toEqual({
+          kind: "not-found",
           message: "This sighting is no longer available.",
           ok: false,
         });
