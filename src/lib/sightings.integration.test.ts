@@ -179,6 +179,7 @@ if (databaseUrl) {
           "delete",
           "get",
           "listRecent",
+          "listWeekdayEvidence",
           "updateDoneness",
         ]);
         const created = await operations.create({
@@ -302,6 +303,29 @@ if (databaseUrl) {
           kind: "not-found",
           message: "This sighting is no longer available.",
           ok: false,
+        });
+      } finally {
+        await database.$client.end();
+      }
+    });
+
+    it("returns deterministic distinct literal-weekday evidence", async () => {
+      const database = drizzle(databaseUrl, { schema });
+      const { createSightingOperations } = await import("./sightings.server");
+      const operations = createSightingOperations(database);
+
+      try {
+        await client.query(
+          "insert into sightings (label_date, label_minute) values ('2026-08-10', 845), ('2026-08-03', 900), ('2026-08-03', 845), ('2026-08-03', 845), ('2026-08-04', 845)"
+        );
+
+        await expect(operations.listWeekdayEvidence(1)).resolves.toEqual({
+          evidence: [
+            { labelDate: "2026-08-03", labelMinute: 845 },
+            { labelDate: "2026-08-03", labelMinute: 900 },
+            { labelDate: "2026-08-10", labelMinute: 845 },
+          ],
+          ok: true,
         });
       } finally {
         await database.$client.end();

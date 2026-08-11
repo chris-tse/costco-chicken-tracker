@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { asc, desc, eq, sql } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 
 import { db } from "@/lib/db";
@@ -17,6 +17,8 @@ import {
   type GetSighting,
   type ListRecentSightings,
   type ListRecentSightingsResult,
+  type ListWeekdayEvidence,
+  PLANNER_EVIDENCE_FAILURE_MESSAGE,
   RECENT_SIGHTINGS_FAILURE_MESSAGE,
   SAVE_FAILURE_MESSAGE,
   SIGHTING_NOT_FOUND_MESSAGE,
@@ -33,6 +35,7 @@ export function createSightingOperations(database: Database): {
   delete: DeleteSighting;
   get: GetSighting;
   listRecent: ListRecentSightings;
+  listWeekdayEvidence: ListWeekdayEvidence;
   updateDoneness: UpdateSightingDoneness;
 } {
   return {
@@ -67,6 +70,26 @@ export function createSightingOperations(database: Database): {
         return {
           kind: "unavailable",
           message: RECENT_SIGHTINGS_FAILURE_MESSAGE,
+          ok: false,
+        };
+      }
+    },
+    listWeekdayEvidence: async (weekday) => {
+      try {
+        const evidence = await database
+          .selectDistinct({
+            labelDate: sightings.labelDate,
+            labelMinute: sightings.labelMinute,
+          })
+          .from(sightings)
+          .where(sql`extract(dow from ${sightings.labelDate}) = ${weekday}`)
+          .orderBy(asc(sightings.labelDate), asc(sightings.labelMinute));
+
+        return { evidence, ok: true };
+      } catch {
+        return {
+          kind: "unavailable",
+          message: PLANNER_EVIDENCE_FAILURE_MESSAGE,
           ok: false,
         };
       }
