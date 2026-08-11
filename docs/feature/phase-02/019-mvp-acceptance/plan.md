@@ -18,8 +18,9 @@ documentation describe only the delivered product.
   starts the migrated container, and runs the browser journey against it.
 - `scripts/acceptance-journey.mjs` checks the complete Capture/Completion/Correction/Recent/
   Plan journey at both 375px and 430px portrait viewports. It includes a reload before
-  enrichment, an intercepted enrichment failure, keyboard/focus behavior, target dimensions,
-  landmarks, labels, headings, live status regions, and horizontal-overflow checks.
+  enrichment, an intercepted enrichment failure, Tab/Shift+Tab/Enter/Space keyboard behavior,
+  focus, target dimensions, landmarks, labels, headings, live status regions, and horizontal-
+  overflow checks.
 - Unit and integration suites remain the focused seams for client-clock boundaries, database
   constraints, failures, planner calculations, and operation contracts.
 - The versioned acceptance record names the exact command and external acceptance evidence that
