@@ -15,7 +15,7 @@ try {
 
   await page.goto(applicationUrl, { waitUntil: "networkidle" });
   await page.getByLabel("Label date").fill("2026-08-11");
-  await page.getByLabel("Label time").fill("14:05");
+  await page.getByRole("textbox", { name: "Label time" }).fill("14:05");
   await page.getByRole("button", { name: "Save label time" }).click();
   await page
     .getByRole("heading", { name: "Sighting saved" })
