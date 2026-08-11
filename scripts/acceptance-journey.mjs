@@ -259,7 +259,7 @@ async function runFullJourney(page) {
     page.getByRole("heading", { name: "Plan" }),
     "Plan heading"
   );
-  await page.getByLabel("Weekday").selectOption("1");
+  await page.getByLabel("Weekday").selectOption("2");
   await expectVisible(
     page.getByRole("heading", { name: "No history for this weekday" }),
     "no-weekday-history state"
