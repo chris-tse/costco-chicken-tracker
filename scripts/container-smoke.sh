@@ -6,10 +6,13 @@ IMAGE_TAG="${IMAGE_TAG:-chicken-tracking:smoke}"
 NETWORK_NAME="chicken-tracking-smoke-$$"
 DATABASE_NAME="chicken-tracking-database-$$"
 APP_NAME="chicken-tracking-app-$$"
+MIGRATION_NAME="chicken-tracking-migration-$$"
 POSTGRES_URL="postgresql://postgres:postgres@${DATABASE_NAME}:5432/chicken_tracking"
+APP_DATABASE_URL="postgresql://chicken_tracking:chicken_tracking@${DATABASE_NAME}:5432/chicken_tracking"
+MIGRATION_LOCK_KEY="481849106705489314"
 
 cleanup() {
-  docker rm --force "$APP_NAME" "$DATABASE_NAME" >/dev/null 2>&1 || true
+  docker rm --force "$APP_NAME" "$MIGRATION_NAME" "$DATABASE_NAME" >/dev/null 2>&1 || true
   docker network rm "$NETWORK_NAME" >/dev/null 2>&1 || true
 }
 
@@ -33,6 +36,12 @@ until docker exec "$DATABASE_NAME" pg_isready -U postgres -d chicken_tracking >/
   sleep 1
 done
 
+docker exec "$DATABASE_NAME" psql --set ON_ERROR_STOP=1 --username postgres --dbname postgres \
+  --command "CREATE ROLE chicken_tracking LOGIN PASSWORD 'chicken_tracking' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT" \
+  >/dev/null
+docker exec "$DATABASE_NAME" psql --set ON_ERROR_STOP=1 --username postgres --dbname postgres \
+  --command "ALTER DATABASE chicken_tracking OWNER TO chicken_tracking" >/dev/null
+
 if docker run --rm "$IMAGE_TAG"; then
   echo "Container unexpectedly served without DATABASE_URL." >&2
   exit 1
@@ -45,11 +54,34 @@ if docker run --rm --network "$NETWORK_NAME" \
   exit 1
 fi
 
-docker run --rm --network "$NETWORK_NAME" --env DATABASE_URL="$POSTGRES_URL" \
-  "$IMAGE_TAG" migrate
+# Hold the same advisory lock to prove both a standalone migration and a serving container wait
+# before they discover or apply the migration history. The two containers then race normally.
+docker exec "$DATABASE_NAME" psql --set ON_ERROR_STOP=1 --username postgres \
+  --dbname chicken_tracking --command "SELECT pg_advisory_lock(${MIGRATION_LOCK_KEY}); SELECT pg_sleep(3)" \
+  >/dev/null &
+LOCK_PROCESS_ID=$!
+sleep 1
 
+docker run --detach --name "$MIGRATION_NAME" --network "$NETWORK_NAME" \
+  --env DATABASE_URL="$APP_DATABASE_URL" "$IMAGE_TAG" migrate >/dev/null
 docker run --detach --name "$APP_NAME" --network "$NETWORK_NAME" \
-  --publish 127.0.0.1::3000 --env DATABASE_URL="$POSTGRES_URL" "$IMAGE_TAG" >/dev/null
+  --publish 127.0.0.1::3000 --env DATABASE_URL="$APP_DATABASE_URL" "$IMAGE_TAG" >/dev/null
+
+sleep 1
+if docker exec "$DATABASE_NAME" psql --tuples-only --no-align --username postgres \
+  --dbname chicken_tracking --command "SELECT to_regclass('drizzle.__drizzle_migrations') IS NOT NULL" \
+  | grep --quiet true; then
+  echo "Migration ran before the advisory lock was released." >&2
+  exit 1
+fi
+
+wait "$LOCK_PROCESS_ID"
+
+if [ "$(docker wait "$MIGRATION_NAME")" != "0" ]; then
+  docker logs "$MIGRATION_NAME" >&2
+  echo "Standalone migration failed while starting concurrently with the server." >&2
+  exit 1
+fi
 
 attempt=0
 until curl --fail --silent --show-error "http://127.0.0.1:$(docker port "$APP_NAME" 3000/tcp | sed 's/.*://')/health" \

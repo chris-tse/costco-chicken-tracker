@@ -8,7 +8,7 @@ RUN bun install --frozen-lockfile
 COPY . ./
 RUN bun run build
 
-FROM node:24-alpine AS runtime
+FROM oven/bun:1.2.22-alpine AS runtime
 
 WORKDIR /app
 
@@ -24,12 +24,12 @@ COPY --from=build /app/scripts/migrate.mjs ./scripts/migrate.mjs
 RUN mv ./.output/server/node_modules ./node_modules \
   && chmod 555 ./scripts/container-start.sh
 
-USER node
+USER bun
 
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD node -e 'fetch("http://127.0.0.1:3000/health").then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))'
+  CMD bun -e 'fetch("http://127.0.0.1:3000/health").then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))'
 
 ENTRYPOINT ["./scripts/container-start.sh"]
 CMD ["serve"]

@@ -23,7 +23,8 @@ private routing, TLS, access policy, backups, and restore operations.
 2. Package build output, migration bundle, and committed migration files in a non-root,
    plain-HTTP OCI image with fail-closed startup and standalone migration mode.
 3. Add black-box container verification and CI coverage, then public GHCR publication for
-   `latest`, immutable SHA, and immutable release-version tags.
+   convenience `latest`, SHA, and release-version tags. Production deployments pin immutable
+   image digests rather than tags.
 4. Document pinned deployments, rollback, gateway responsibility, provisioning, backups,
    seven-day retention, tested restore, and recovery.
 

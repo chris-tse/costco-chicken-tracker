@@ -56,7 +56,21 @@ jobs:
       - name: Set package visibility to public
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: >-
-          gh api --method PATCH
-          "/user/packages/container/${{ github.event.repository.name }}"
-          -f visibility=public
+          PACKAGE_OWNER: ${{ github.event.repository.owner.login }}
+          PACKAGE_OWNER_TYPE: ${{ github.event.repository.owner.type }}
+          PACKAGE_NAME: ${{ github.event.repository.name }}
+        run: |
+          case "$PACKAGE_OWNER_TYPE" in
+            Organization)
+              endpoint="/orgs/$PACKAGE_OWNER/packages/container/$PACKAGE_NAME"
+              ;;
+            User)
+              endpoint="/user/packages/container/$PACKAGE_NAME"
+              ;;
+            *)
+              echo "Unsupported GitHub package owner type: $PACKAGE_OWNER_TYPE" >&2
+              exit 1
+              ;;
+          esac
+
+          gh api --method PATCH "$endpoint" -f visibility=public
