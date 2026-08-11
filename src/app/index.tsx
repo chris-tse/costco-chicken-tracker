@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { type ReactNode, useEffect, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -76,8 +76,9 @@ function formatSavedLabelTime(sighting: Sighting): string {
 
 export function CapturePage(): ReactNode {
   const save = useServerFn(saveSighting);
-  const saveSightingFromRoute: CreateSighting = async (input) =>
-    save({ data: input });
+  const saveSightingFromRoute: CreateSighting = async (input) => {
+    return await save({ data: input });
+  };
 
   return <CaptureForm saveSighting={saveSightingFromRoute} />;
 }
@@ -141,6 +142,13 @@ export function CaptureForm({
     }
   };
 
+  const handleSubmit = async (
+    event: FormEvent<HTMLFormElement>
+  ): Promise<void> => {
+    event.preventDefault();
+    await handleSave();
+  };
+
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-4 py-8">
       <header className="mb-8">
@@ -157,7 +165,12 @@ export function CaptureForm({
           <CardTitle>Label time</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-6">
+          <form
+            aria-label="Capture label time"
+            className="grid gap-6"
+            noValidate
+            onSubmit={handleSubmit}
+          >
             <div className="grid gap-2">
               <Label htmlFor="label-time">Label time</Label>
               <Input
@@ -220,12 +233,11 @@ export function CaptureForm({
             <Button
               className="h-12 text-base"
               disabled={isSaving}
-              onClick={handleSave}
-              type="button"
+              type="submit"
             >
               Save label time
             </Button>
-          </div>
+          </form>
         </CardContent>
       </Card>
     </div>

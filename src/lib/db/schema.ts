@@ -10,7 +10,11 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 
-import { DONENESS_VALUES } from "../sightings";
+import { DONENESS_VALUES } from "@/lib/sightings";
+
+const DONENESS_CONSTRAINT_VALUES = sql.raw(
+  DONENESS_VALUES.map((value) => `'${value}'`).join(", ")
+);
 
 export const sightings = pgTable(
   "sightings",
@@ -34,7 +38,7 @@ export const sightings = pgTable(
     ),
     check(
       "sightings_doneness_check",
-      sql`${table.doneness} in ('light', 'medium', 'dark')`
+      sql`${table.doneness} in (${DONENESS_CONSTRAINT_VALUES})`
     ),
     index("sightings_recent_idx").on(desc(table.createdAt), desc(table.id)),
   ]

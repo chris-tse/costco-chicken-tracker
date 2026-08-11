@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Client } from "pg";
@@ -7,6 +8,10 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { schema } from "@/lib/db/schema";
 
 const databaseUrl = process.env.DATABASE_URL;
+const migrationPath = resolve(
+  process.cwd(),
+  "drizzle/20260811072733_early_luke_cage/migration.sql"
+);
 
 if (databaseUrl) {
   describe("sighting persistence", () => {
@@ -17,13 +22,7 @@ if (databaseUrl) {
       await client.connect();
       await client.query('DROP TABLE IF EXISTS "sightings"');
 
-      const migration = await readFile(
-        new URL(
-          "../../drizzle/20260811072733_early_luke_cage/migration.sql",
-          import.meta.url
-        ),
-        "utf8"
-      );
+      const migration = await readFile(migrationPath, "utf8");
       for (const statement of migration.split("--> statement-breakpoint")) {
         await client.query(statement);
       }
