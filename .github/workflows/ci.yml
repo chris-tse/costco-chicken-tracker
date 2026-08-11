@@ -89,7 +89,9 @@ jobs:
         env:
           ACCEPTANCE_BROWSER_LABEL: Google Chrome current (${{ steps.current-chrome.outputs.chrome-version }})
           BROWSER_EXECUTABLE_PATH: ${{ steps.current-chrome.outputs.chrome-path }}
-        run: bun run acceptance:container
+        run: |
+          mkdir --parents acceptance-artifacts
+          bun run acceptance:container 2>&1 | tee acceptance-artifacts/current-chrome.log
 
       - name: Resolve immediately previous Chrome major
         id: previous-chrome
@@ -111,4 +113,14 @@ jobs:
         env:
           ACCEPTANCE_BROWSER_LABEL: Google Chrome previous (${{ steps.previous-chrome-install.outputs.chrome-version }})
           BROWSER_EXECUTABLE_PATH: ${{ steps.previous-chrome-install.outputs.chrome-path }}
-        run: bun run acceptance:container
+        run: |
+          mkdir --parents acceptance-artifacts
+          bun run acceptance:container 2>&1 | tee acceptance-artifacts/previous-chrome.log
+
+      - name: Upload Chrome acceptance artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: chrome-acceptance-${{ github.sha }}
+          path: acceptance-artifacts/
+          if-no-files-found: warn

@@ -17,10 +17,13 @@ documentation describe only the delivered product.
 - `bun run acceptance:container` builds the image, creates an isolated PostgreSQL 17 database,
   starts the migrated container, and runs the browser journey against it.
 - `scripts/acceptance-journey.mjs` checks the complete Capture/Completion/Correction/Recent/
-  Plan journey at both 375px and 430px portrait viewports. It includes a reload before
-  enrichment, an intercepted enrichment failure, Tab/Shift+Tab/Enter/Space keyboard behavior,
-  focus, target dimensions, landmarks, labels, headings, live status regions, and horizontal-
-  overflow checks.
+  Plan journey at 375px, 390px, and 430px portrait viewports. Each width uses distinct fixture
+  records in the same isolated database, so every required path is run at each edge. It includes
+  a reload before enrichment, an identity-checked intercepted doneness update failure,
+  Tab/Shift+Tab/Enter/Space keyboard behavior, focus, target dimensions, landmarks, labels,
+  headings, live-status semantics, and horizontal-overflow checks. Axe, target, and overflow
+  checks also run in deletion confirmation, post-correction completion, enrichment failure, and
+  post-failure correction states.
 - Unit and integration suites remain the focused seams for client-clock boundaries, database
   constraints, failures, planner calculations, and operation contracts.
 - The versioned acceptance record names the exact command and external acceptance evidence that
