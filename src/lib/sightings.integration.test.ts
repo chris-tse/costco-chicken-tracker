@@ -166,5 +166,146 @@ if (databaseUrl) {
         await database.$client.end();
       }
     });
+
+    it("looks up, corrects, and permanently deletes an identified sighting", async () => {
+      const database = drizzle(databaseUrl, { schema });
+      const { createSightingOperations } = await import("./sightings.server");
+      const operations = createSightingOperations(database);
+
+      try {
+        expect(Object.keys(operations).sort()).toEqual([
+          "correct",
+          "create",
+          "delete",
+          "get",
+          "listRecent",
+          "updateDoneness",
+        ]);
+        const created = await operations.create({
+          labelDate: "2026-08-11",
+          labelMinute: 845,
+        });
+        expect(created.ok).toBe(true);
+        if (!created.ok) {
+          return;
+        }
+
+        await expect(
+          operations.get(created.sighting.id)
+        ).resolves.toMatchObject({
+          ok: true,
+          sighting: {
+            doneness: null,
+            id: created.sighting.id,
+            labelDate: "2026-08-11",
+            labelMinute: 845,
+          },
+        });
+
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        const corrected = await operations.correct({
+          doneness: "light",
+          id: created.sighting.id,
+          labelDate: "2024-02-29",
+          labelMinute: 480,
+        });
+        expect(corrected).toMatchObject({
+          ok: true,
+          sighting: {
+            doneness: "light",
+            id: created.sighting.id,
+            labelDate: "2024-02-29",
+            labelMinute: 480,
+          },
+        });
+        expect(
+          corrected.ok && corrected.sighting.updatedAt.getTime()
+        ).toBeGreaterThan(created.sighting.updatedAt.getTime());
+
+        await expect(operations.delete(created.sighting.id)).resolves.toEqual({
+          ok: true,
+        });
+        await expect(operations.get(created.sighting.id)).resolves.toEqual({
+          kind: "not-found",
+          message: "This sighting is no longer available.",
+          ok: false,
+        });
+      } finally {
+        await database.$client.end();
+      }
+    });
+
+    it("lists exactly three sightings by immutable creation instant and identity", async () => {
+      const database = drizzle(databaseUrl, { schema });
+      const { createSightingOperations } = await import("./sightings.server");
+      const operations = createSightingOperations(database);
+
+      try {
+        const sharedCreationInstant = "2026-08-11T19:05:00.000Z";
+        for (const labelDate of [
+          "2020-01-01",
+          "2021-01-01",
+          "2022-01-01",
+          "2023-01-01",
+        ]) {
+          await client.query(
+            "insert into sightings (label_date, label_minute, created_at, updated_at) values ($1, $2, $3, $3)",
+            [labelDate, 845, sharedCreationInstant]
+          );
+        }
+
+        const recentBeforeCorrection = await operations.listRecent();
+        expect(recentBeforeCorrection).toMatchObject({ ok: true });
+        if (!recentBeforeCorrection.ok) {
+          return;
+        }
+        expect(recentBeforeCorrection.sightings).toHaveLength(3);
+        expect(
+          recentBeforeCorrection.sightings.map((sighting) => sighting.id)
+        ).toEqual([4, 3, 2]);
+
+        const corrected = await operations.correct({
+          doneness: "dark",
+          id: 2,
+          labelDate: "1999-12-31",
+          labelMinute: 0,
+        });
+        expect(corrected).toMatchObject({ ok: true });
+
+        const recentAfterCorrection = await operations.listRecent();
+        expect(recentAfterCorrection).toMatchObject({ ok: true });
+        if (!recentAfterCorrection.ok) {
+          return;
+        }
+        expect(
+          recentAfterCorrection.sightings.map((sighting) => sighting.id)
+        ).toEqual([4, 3, 2]);
+        expect(recentAfterCorrection.sightings[2]).toMatchObject({
+          doneness: "dark",
+          labelDate: "1999-12-31",
+          labelMinute: 0,
+        });
+
+        await expect(
+          operations.correct({
+            doneness: null,
+            id: 99,
+            labelDate: "2026-08-11",
+            labelMinute: 845,
+          })
+        ).resolves.toEqual({
+          kind: "not-found",
+          message: "This sighting is no longer available.",
+          ok: false,
+        });
+        await expect(operations.delete(99)).resolves.toEqual({
+          kind: "not-found",
+          message: "This sighting is no longer available.",
+          ok: false,
+        });
+      } finally {
+        await database.$client.end();
+      }
+    });
   });
 }
