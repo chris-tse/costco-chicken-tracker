@@ -9,6 +9,20 @@ jobs:
   ci:
     name: Typecheck, Lint, Test
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: chicken_tracking_test
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        options: >-
+          --health-cmd "pg_isready -U postgres -d chicken_tracking_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     steps:
       - uses: actions/checkout@v4
 
@@ -27,3 +41,5 @@ jobs:
 
       - name: Test
         run: bunx vitest run
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/chicken_tracking_test

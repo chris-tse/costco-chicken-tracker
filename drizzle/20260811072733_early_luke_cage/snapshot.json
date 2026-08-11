@@ -1,0 +1,152 @@
+{
+  "version": "8",
+  "dialect": "postgres",
+  "id": "c11c5efa-648e-4050-a848-76592dabe304",
+  "prevIds": ["00000000-0000-0000-0000-000000000000"],
+  "ddl": [
+    {
+      "isRlsEnabled": false,
+      "name": "sightings",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": {
+        "type": "always",
+        "name": "sightings_id_seq",
+        "increment": "1",
+        "startWith": "1",
+        "minValue": "1",
+        "maxValue": "2147483647",
+        "cache": 1,
+        "cycle": false
+      },
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sightings"
+    },
+    {
+      "type": "date",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "label_date",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sightings"
+    },
+    {
+      "type": "smallint",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "label_minute",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sightings"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "doneness",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sightings"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sightings"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sightings"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "\"created_at\" desc",
+          "isExpression": true,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "\"id\" desc",
+          "isExpression": true,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "sightings_recent_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "sightings"
+    },
+    {
+      "columns": ["id"],
+      "nameExplicit": false,
+      "name": "sightings_pkey",
+      "schema": "public",
+      "table": "sightings",
+      "entityType": "pks"
+    },
+    {
+      "value": "\"label_minute\" between 0 and 1439",
+      "name": "sightings_label_minute_check",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "sightings"
+    },
+    {
+      "value": "\"doneness\" in ('light', 'medium', 'dark')",
+      "name": "sightings_doneness_check",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "sightings"
+    }
+  ],
+  "renames": []
+}
