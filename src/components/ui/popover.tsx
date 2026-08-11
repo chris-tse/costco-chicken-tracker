@@ -1,7 +1,9 @@
 "use client";
 
-import { Popover as PopoverPrimitive } from "radix-ui";
+// biome-ignore assist/source/organizeImports: Imports follow the repository's documented group order.
 import type * as React from "react";
+
+import { Popover as PopoverPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/utils";
 
