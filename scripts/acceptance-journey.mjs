@@ -1,6 +1,8 @@
 import AxeBuilder from "@axe-core/playwright";
 import { chromium } from "@playwright/test";
 
+import { isDonenessUpdateRequest } from "./acceptance-request-matcher.mjs";
+
 const applicationUrl = process.argv[2];
 
 if (!applicationUrl) {
@@ -194,6 +196,7 @@ async function runFullJourney(page, viewport, fixtureIndex) {
   const initialSightingPattern = recentSightingPattern(fixture.initial);
   const correctedSightingPattern = recentSightingPattern(fixture.corrected);
   const failureSightingPattern = recentSightingPattern(fixture.failure);
+  const expectedCorrectedSightingId = 3 + fixtureIndex * 3;
   const expectedFailureSightingId = 4 + fixtureIndex * 3;
   const viewportDescription = describeViewport(viewport);
 
@@ -269,7 +272,22 @@ async function runFullJourney(page, viewport, fixtureIndex) {
     page.getByRole("button", { name: "Medium" }),
     "Medium doneness button"
   );
+  const correctedDonenessRequest = page.waitForRequest((request) =>
+    isDonenessUpdateRequest(
+      {
+        body: request.postData() ?? "",
+        method: request.method(),
+        url: request.url(),
+      },
+      {
+        doneness: "medium",
+        id: expectedCorrectedSightingId,
+        url: request.url(),
+      }
+    )
+  );
   await page.keyboard.press("Space");
+  const donenessUpdateUrl = (await correctedDonenessRequest).url();
   await assertLiveRegion(
     page.getByText("Doneness saved as medium."),
     "polite",
@@ -371,16 +389,26 @@ async function runFullJourney(page, viewport, fixtureIndex) {
   await saveSighting(page, fixture.failure.date, fixture.failure.time);
 
   const interceptedRequests = [];
-  await page.route("**/*", async (route) => {
+  await page.route(donenessUpdateUrl, async (route) => {
     const request = route.request();
-    const requestBody = request.postData() ?? "";
-    const isDonenessUpdate =
-      request.method() === "POST" &&
-      requestBody.includes(`"id":${expectedFailureSightingId}`) &&
-      requestBody.includes('"doneness":"light"');
+    const isDonenessUpdate = isDonenessUpdateRequest(
+      {
+        body: request.postData() ?? "",
+        method: request.method(),
+        url: request.url(),
+      },
+      {
+        doneness: "light",
+        id: expectedFailureSightingId,
+        url: donenessUpdateUrl,
+      }
+    );
 
     if (isDonenessUpdate) {
-      interceptedRequests.push({ body: requestBody, url: request.url() });
+      interceptedRequests.push({
+        body: request.postData() ?? "",
+        url: request.url(),
+      });
       await route.abort("failed");
       return;
     }
@@ -400,7 +428,7 @@ async function runFullJourney(page, viewport, fixtureIndex) {
     page,
     `enrichment failure at ${viewportDescription}`
   );
-  await page.unroute("**/*");
+  await page.unroute(donenessUpdateUrl);
   await page.reload({ waitUntil: "networkidle" });
   await expectVisible(
     page.getByRole("heading", { name: "Capture" }),
