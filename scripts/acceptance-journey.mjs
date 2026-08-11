@@ -9,14 +9,28 @@ if (!applicationUrl) {
   );
 }
 
-const JOURNEY_VIEWPORT = { height: 844, width: 390 };
-const NARROW_VIEWPORTS = [375, 430];
+const JOURNEY_HEIGHT = 844;
+const JOURNEY_VIEWPORTS = [375, 390, 430];
 const MAX_NATIVE_CONTROL_TABS = 4;
 const MINIMUM_TARGET_SIZE = 44;
-const INITIAL_SIGHTING_PATTERN = /August 10, 2026 at 10:00 AM/;
-const CORRECTED_SIGHTING_PATTERN = /August 17, 2026 at 2:15 PM/;
-const FAILURE_SIGHTING_PATTERN = /August 24, 2026 at 12:00 PM/;
 const DONENESS_FAILURE_PATTERN = /Unable to save doneness/;
+const JOURNEY_FIXTURES = [
+  {
+    corrected: { date: "2026-08-17", time: "14:15" },
+    failure: { date: "2026-08-24", time: "12:00" },
+    initial: { date: "2026-08-10", time: "10:00" },
+  },
+  {
+    corrected: { date: "2026-09-07", time: "14:15" },
+    failure: { date: "2026-09-14", time: "12:00" },
+    initial: { date: "2026-08-31", time: "10:00" },
+  },
+  {
+    corrected: { date: "2026-09-28", time: "14:15" },
+    failure: { date: "2026-10-05", time: "12:00" },
+    initial: { date: "2026-09-21", time: "10:00" },
+  },
+];
 
 function ensure(condition, message) {
   if (!condition) {
@@ -26,6 +40,25 @@ function ensure(condition, message) {
 
 function describeViewport(viewport) {
   return `${viewport.width}x${viewport.height}`;
+}
+
+function recentSightingPattern({ date, time }) {
+  const [year, month, day] = date.split("-").map(Number);
+  const [hour, minute] = time.split(":").map(Number);
+  const instant = new Date(Date.UTC(year, month - 1, day, hour, minute));
+  const formattedDate = new Intl.DateTimeFormat("en-US", {
+    day: "numeric",
+    month: "long",
+    timeZone: "UTC",
+    year: "numeric",
+  }).format(instant);
+  const formattedTime = new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "UTC",
+  }).format(instant);
+
+  return new RegExp(`${formattedDate} at ${formattedTime}`);
 }
 
 async function expectVisible(locator, description) {
@@ -94,6 +127,33 @@ async function assertAccessibility(page, description) {
   await assertTouchTargets(page, description);
 }
 
+async function assertLiveRegion(locator, expectedLive, description) {
+  await expectVisible(locator, description);
+  ensure(
+    (await locator.getAttribute("aria-live")) === expectedLive,
+    `${description} has aria-live=${expectedLive}`
+  );
+}
+
+async function assertAlert(locator, description) {
+  await assertLiveRegion(locator, "assertive", description);
+  ensure(
+    (await locator.getAttribute("role")) === "alert",
+    `${description} has role=alert`
+  );
+}
+
+async function assertDeletionDialog(page) {
+  const dialog = page.getByRole("dialog", {
+    name: "Permanently delete this sighting?",
+  });
+  await expectVisible(dialog, "deletion confirmation dialog");
+  ensure(
+    (await dialog.getAttribute("aria-modal")) === "true",
+    "deletion confirmation dialog is modal"
+  );
+}
+
 async function openCapture(page) {
   await page.goto(applicationUrl, { waitUntil: "networkidle" });
   await expectVisible(
@@ -139,7 +199,15 @@ async function pressUntilFocused(page, locator, key, description) {
   await assertFocused(locator, description);
 }
 
-async function runFullJourney(page) {
+async function runFullJourney(page, viewport, fixtureIndex) {
+  const fixture = JOURNEY_FIXTURES[fixtureIndex];
+  ensure(fixture, `fixture exists for ${describeViewport(viewport)}`);
+  const initialSightingPattern = recentSightingPattern(fixture.initial);
+  const correctedSightingPattern = recentSightingPattern(fixture.corrected);
+  const failureSightingPattern = recentSightingPattern(fixture.failure);
+  const expectedFailureSightingId = 4 + fixtureIndex * 3;
+  const viewportDescription = describeViewport(viewport);
+
   await openCapture(page);
   await expectVisible(page.getByRole("main"), "main landmark");
   await expectVisible(
@@ -148,7 +216,7 @@ async function runFullJourney(page) {
   );
   await expectVisible(page.locator("#label-time"), "labelled time input");
   await expectVisible(page.locator("#label-date"), "labelled date input");
-  await assertAccessibility(page, "initial Capture at 390px");
+  await assertAccessibility(page, `initial Capture at ${viewportDescription}`);
 
   await page.locator("#label-time").focus();
   await assertFocused(page.locator("#label-time"), "Capture label-time input");
@@ -164,8 +232,8 @@ async function runFullJourney(page) {
     "Shift+Tab",
     "Capture label-time input after Shift+Tab"
   );
-  await page.locator("#label-date").fill("2026-08-10");
-  await page.locator("#label-time").fill("10:00");
+  await page.locator("#label-date").fill(fixture.initial.date);
+  await page.locator("#label-time").fill(fixture.initial.time);
   await page.locator("#label-time").focus();
   await page.keyboard.press("Enter");
   await expectVisible(
@@ -176,7 +244,7 @@ async function runFullJourney(page) {
     page.getByRole("heading", { name: "Sighting saved" }),
     "completion heading"
   );
-  await assertAccessibility(page, "completion at 390px");
+  await assertAccessibility(page, `completion at ${viewportDescription}`);
 
   await page.reload({ waitUntil: "networkidle" });
   await expectVisible(
@@ -184,7 +252,7 @@ async function runFullJourney(page) {
     "Capture after reload"
   );
   const persistedSighting = page.getByRole("button", {
-    name: INITIAL_SIGHTING_PATTERN,
+    name: initialSightingPattern,
   });
   await expectVisible(
     persistedSighting,
@@ -199,22 +267,23 @@ async function runFullJourney(page) {
     page.getByRole("heading", { name: "Correct sighting" }),
     "correction heading"
   );
-  await assertAccessibility(page, "correction at 390px");
+  await assertAccessibility(page, `correction at ${viewportDescription}`);
   await page.getByRole("button", { name: "Cancel" }).click();
   await expectVisible(
     page.getByRole("heading", { name: "Capture" }),
     "Capture after cancel"
   );
 
-  await saveSighting(page, "2026-08-17", "14:05");
+  await saveSighting(page, fixture.corrected.date, "14:05");
   await page.getByRole("button", { name: "Medium" }).focus();
   await assertFocused(
     page.getByRole("button", { name: "Medium" }),
     "Medium doneness button"
   );
   await page.keyboard.press("Space");
-  await expectVisible(
+  await assertLiveRegion(
     page.getByText("Doneness saved as medium."),
+    "polite",
     "doneness status"
   );
   await page.getByRole("button", { name: "Correct this sighting" }).click();
@@ -231,8 +300,12 @@ async function runFullJourney(page) {
     "completion after correction"
   );
   await expectVisible(
-    page.getByText(CORRECTED_SIGHTING_PATTERN),
+    page.getByText(correctedSightingPattern),
     "corrected label time"
+  );
+  await assertAccessibility(
+    page,
+    `completion after correction at ${viewportDescription}`
   );
   await page.getByRole("button", { exact: true, name: "Done" }).click();
   await expectVisible(
@@ -248,10 +321,15 @@ async function runFullJourney(page) {
     page.getByRole("heading", { name: "Recent Sightings" }),
     "recent heading"
   );
-  await page.getByRole("button", { name: CORRECTED_SIGHTING_PATTERN }).click();
+  await page.getByRole("button", { name: correctedSightingPattern }).click();
   await expectVisible(
     page.getByRole("heading", { name: "Correct sighting" }),
     "recent correction"
+  );
+  await assertDeletionDialog(page);
+  await assertAccessibility(
+    page,
+    `deletion confirmation at ${viewportDescription}`
   );
   await page.getByRole("button", { name: "Delete sighting" }).click();
   await expectVisible(
@@ -269,7 +347,7 @@ async function runFullJourney(page) {
   );
   ensure(
     (await page
-      .getByRole("button", { name: CORRECTED_SIGHTING_PATTERN })
+      .getByRole("button", { name: correctedSightingPattern })
       .count()) === 0,
     "deleted sighting is absent from Recent Sightings"
   );
@@ -281,7 +359,7 @@ async function runFullJourney(page) {
     page.getByRole("heading", { name: "Plan" }),
     "Plan heading"
   );
-  await page.getByLabel("Weekday", { exact: true }).selectOption("2");
+  await page.getByLabel("Weekday", { exact: true }).selectOption("0");
   await expectVisible(
     page.getByRole("heading", { name: "No history for this weekday" }),
     "no-weekday-history state"
@@ -292,7 +370,7 @@ async function runFullJourney(page) {
     page.getByRole("heading", { name: "Not enough history to compare yet" }),
     "sparse Plan state"
   );
-  await assertAccessibility(page, "Plan at 390px");
+  await assertAccessibility(page, `Plan at ${viewportDescription}`);
 
   await page
     .getByRole("navigation", { name: "Primary navigation" })
@@ -302,12 +380,20 @@ async function runFullJourney(page) {
     page.getByRole("heading", { name: "Capture" }),
     "Capture before failure case"
   );
-  await saveSighting(page, "2026-08-24", "12:00");
+  await saveSighting(page, fixture.failure.date, fixture.failure.time);
 
-  let interceptedEnrichment = false;
+  const interceptedRequests = [];
   await page.route("**/*", async (route) => {
-    if (route.request().method() === "POST") {
-      interceptedEnrichment = true;
+    const request = route.request();
+    const requestBody = request.postData() ?? "";
+    const isDonenessUpdate =
+      request.method() === "POST" &&
+      request.headerValue("x-tsr-serverfn") === "true" &&
+      requestBody.includes(`"id":${expectedFailureSightingId}`) &&
+      requestBody.includes('"doneness":"light"');
+
+    if (isDonenessUpdate) {
+      interceptedRequests.push({ body: requestBody, url: request.url() });
       await route.abort("failed");
       return;
     }
@@ -315,42 +401,43 @@ async function runFullJourney(page) {
     await route.continue();
   });
   await page.getByRole("button", { name: "Light" }).click();
-  await expectVisible(
+  await assertAlert(
     page.getByText(DONENESS_FAILURE_PATTERN),
     "enrichment failure"
   );
-  ensure(interceptedEnrichment, "enrichment request was intercepted");
+  ensure(
+    interceptedRequests.length === 1,
+    "exactly one doneness request was intercepted"
+  );
+  await assertAccessibility(
+    page,
+    `enrichment failure at ${viewportDescription}`
+  );
   await page.unroute("**/*");
   await page.reload({ waitUntil: "networkidle" });
   await expectVisible(
     page.getByRole("heading", { name: "Capture" }),
     "Capture after enrichment failure"
   );
-  await page.getByRole("button", { name: FAILURE_SIGHTING_PATTERN }).click();
+  await page.getByRole("button", { name: failureSightingPattern }).click();
   await expectVisible(
     page.getByRole("heading", { name: "Correct sighting" }),
     "correction after enrichment failure"
   );
+  await assertAccessibility(
+    page,
+    `correction after enrichment failure at ${viewportDescription}`
+  );
 }
 
-async function assertNarrowViewports(browser) {
-  for (const width of NARROW_VIEWPORTS) {
-    const viewport = { height: 844, width };
+async function runJourneysAtAllViewports(browser) {
+  for (const [fixtureIndex, width] of JOURNEY_VIEWPORTS.entries()) {
+    const viewport = { height: JOURNEY_HEIGHT, width };
     const context = await browser.newContext({ viewport });
     const page = await context.newPage();
 
     try {
-      await openCapture(page);
-      await assertAccessibility(
-        page,
-        `Capture at ${describeViewport(viewport)}`
-      );
-      await page.getByRole("link", { name: "Plan" }).click();
-      await expectVisible(
-        page.getByRole("heading", { name: "Plan" }),
-        "Plan heading"
-      );
-      await assertAccessibility(page, `Plan at ${describeViewport(viewport)}`);
+      await runFullJourney(page, viewport, fixtureIndex);
     } finally {
       await context.close();
     }
@@ -363,22 +450,13 @@ const browser = await chromium.launch({
 });
 
 try {
-  const context = await browser.newContext({ viewport: JOURNEY_VIEWPORT });
-  const page = await context.newPage();
-
-  try {
-    await runFullJourney(page);
-  } finally {
-    await context.close();
-  }
-
-  await assertNarrowViewports(browser);
+  await runJourneysAtAllViewports(browser);
   console.log(
     JSON.stringify({
       browser:
         process.env.ACCEPTANCE_BROWSER_LABEL ?? `Chromium ${browser.version()}`,
       result: "passed",
-      viewports: [JOURNEY_VIEWPORT.width, ...NARROW_VIEWPORTS],
+      viewports: JOURNEY_VIEWPORTS,
     })
   );
 } finally {
