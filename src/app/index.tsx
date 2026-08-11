@@ -348,7 +348,7 @@ function SightingCompletion({
   };
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col px-4 py-8">
+    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-4 py-8">
       <header className="mb-8">
         <p className="font-medium text-muted-foreground text-sm">
           Chicken Tracking
@@ -418,6 +418,6 @@ function SightingCompletion({
           </Button>
         </CardContent>
       </Card>
-    </main>
+    </div>
   );
 }
