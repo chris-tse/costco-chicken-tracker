@@ -2,9 +2,11 @@
 
 ## Project Overview
 
-CostcoChickenTracker — a TanStack Start (Vite-based) web app for crowdsourcing Costco
-rotisserie chicken batch timestamps and visualizing probability heatmaps. Full-stack
-TypeScript, single repo. Early stage (core features not yet built).
+Chicken Tracking — a private, mobile-first TanStack Start (Vite-based) web app for one
+person to record printed rotisserie chicken label dates and times, optionally note doneness,
+and learn from accumulated sightings. It has no application account or location model.
+Full-stack TypeScript, single repo. Early stage, delivered through the current seven-ticket
+graph.
 
 ---
 
