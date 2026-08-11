@@ -135,7 +135,24 @@ async function runFullJourney(page) {
     page.getByLabel("Label time"),
     "Capture label-time input"
   );
-  await saveSighting(page, "2026-08-10", "10:00");
+  await page.keyboard.press("Tab");
+  await assertFocused(
+    page.getByLabel("Label date"),
+    "Capture label-date input after Tab"
+  );
+  await page.keyboard.press("Shift+Tab");
+  await assertFocused(
+    page.getByLabel("Label time"),
+    "Capture label-time input after Shift+Tab"
+  );
+  await page.getByLabel("Label date").fill("2026-08-10");
+  await page.getByLabel("Label time").fill("10:00");
+  await page.getByLabel("Label time").focus();
+  await page.keyboard.press("Enter");
+  await expectVisible(
+    page.getByRole("heading", { name: "Sighting saved" }),
+    "completion heading after keyboard submit"
+  );
   await assertFocused(
     page.getByRole("heading", { name: "Sighting saved" }),
     "completion heading"
@@ -171,7 +188,12 @@ async function runFullJourney(page) {
   );
 
   await saveSighting(page, "2026-08-17", "14:05");
-  await page.getByRole("button", { name: "Medium" }).click();
+  await page.getByRole("button", { name: "Medium" }).focus();
+  await assertFocused(
+    page.getByRole("button", { name: "Medium" }),
+    "Medium doneness button"
+  );
+  await page.keyboard.press("Space");
   await expectVisible(
     page.getByText("Doneness saved as medium."),
     "doneness status"
@@ -183,7 +205,8 @@ async function runFullJourney(page) {
   );
   await page.getByLabel("Label time").fill("14:15");
   await page.getByLabel("Doneness").selectOption("dark");
-  await page.getByRole("button", { name: "Save correction" }).click();
+  await page.getByRole("button", { name: "Save correction" }).focus();
+  await page.keyboard.press("Enter");
   await expectVisible(
     page.getByRole("heading", { name: "Sighting saved" }),
     "completion after correction"
@@ -232,7 +255,9 @@ async function runFullJourney(page) {
     "deleted sighting is absent from Recent Sightings"
   );
 
-  await page.getByRole("link", { name: "Plan" }).click();
+  await page.getByRole("link", { name: "Plan" }).focus();
+  await assertFocused(page.getByRole("link", { name: "Plan" }), "Plan link");
+  await page.keyboard.press("Enter");
   await expectVisible(
     page.getByRole("heading", { name: "Plan" }),
     "Plan heading"

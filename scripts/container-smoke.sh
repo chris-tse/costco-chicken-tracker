@@ -98,6 +98,13 @@ done
 APP_HTTP_PORT="$(docker port "$APP_NAME" 3000/tcp | sed 's/.*://')"
 curl --fail --silent --show-error "http://127.0.0.1:${APP_HTTP_PORT}/" | grep --quiet "Capture"
 curl --fail --silent --show-error "http://127.0.0.1:${APP_HTTP_PORT}/plan" | grep --quiet "Plan"
+
+# Every acceptance journey starts from a fresh database but has a stable historical record. Its
+# intentionally old creation instant keeps the journey's new sightings first in Recent Sightings.
+docker exec "$DATABASE_NAME" psql --set ON_ERROR_STOP=1 --username postgres \
+  --dbname chicken_tracking --command \
+  "INSERT INTO sightings (label_date, label_minute, created_at, updated_at) VALUES ('2020-01-01', 600, '2000-01-01T00:00:00Z', '2000-01-01T00:00:00Z')" \
+  >/dev/null
 node ./scripts/acceptance-journey.mjs "http://127.0.0.1:${APP_HTTP_PORT}"
 
 docker stop "$DATABASE_NAME" >/dev/null
