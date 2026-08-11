@@ -4,6 +4,11 @@ The source of truth is [GitHub issue #12](https://github.com/chris-tse/costco-ch
 This document is the repository-local guide to that resolved specification and
 its delivery checkpoints.
 
+The assembled checkpoint is [#19](https://github.com/chris-tse/costco-chicken-tracker/issues/19).
+Its [versioned acceptance record](acceptance/2026-08-11-mvp.md) is the handoff status: automated
+evidence can be reproduced from the repository, while physical-device and named-browser evidence
+must be recorded as a distinct release check and is never inferred from emulation.
+
 ## Product
 
 Chicken Tracking is a private, mobile-first application for one person. It
@@ -27,8 +32,9 @@ The full vocabulary is in [`CONTEXT.md`](../CONTEXT.md).
 
 ## Resolved delivery graph
 
-The approved graph has seven sequential, reviewable tickets. Each ticket must be
-runnable and green before the next one is treated as ready.
+The approved graph has seven sequential, reviewable tickets. Each ticket must be runnable and
+green before the next one is treated as ready. #19 reconciles the active documentation and records
+the final acceptance evidence; it does not add a history grid or any other excluded feature.
 
 1. [#13 — Prepare the private application shell](https://github.com/chris-tse/costco-chicken-tracker/issues/13)
 2. [#14 — Capture and durably save label time](https://github.com/chris-tse/costco-chicken-tracker/issues/14)

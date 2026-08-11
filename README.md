@@ -6,7 +6,8 @@ sightings. Application access belongs at a private gateway; the app has no
 account or location model.
 
 The current product specification is [issue #12](https://github.com/chris-tse/costco-chicken-tracker/issues/12).
-The implementation starts with the private application shell in [issue #13](https://github.com/chris-tse/costco-chicken-tracker/issues/13).
+The seven-checkpoint delivery graph ends with [#19](https://github.com/chris-tse/costco-chicken-tracker/issues/19),
+which records assembled-MVP acceptance and documentation reconciliation.
 
 ## Development
 
@@ -16,8 +17,11 @@ export DATABASE_URL="postgres://..."
 bun run dev
 ```
 
-Run the automated checks with `bun run lint`, `bun run typecheck`, `bun run test`,
-and `bun run build`.
+Run the automated checks with `bun run lint`, `bun run typecheck`, `bunx vitest run`, and
+`bun run build`. On a machine with Docker, `bun run acceptance:container` builds the image,
+starts isolated PostgreSQL, and runs the assembled accessibility/browser journey. See the
+versioned [acceptance record](docs/acceptance/2026-08-11-mvp.md) for the required external
+device and browser evidence.
 
 `DATABASE_URL` is the only required application secret. PostgreSQL provisioning,
 backups, private access, TLS, and routing are operator responsibilities.

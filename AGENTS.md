@@ -21,6 +21,7 @@ bun run check                             # lint check
 bun run fix                               # lint fix
 bun run typecheck                         # Type-check without emitting
 bun run test                              # Run all tests
+bun run acceptance:container              # Container, PostgreSQL, browser, and accessibility journey
 bunx vitest run path/to/file.test.ts      # Run a single test file
 bunx vitest run -t "pattern"              # Run tests matching a pattern
 bunx vitest watch                         # Watch mode

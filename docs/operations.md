@@ -4,6 +4,27 @@ Chicken Tracking is a stateless, plain-HTTP application container. It uses an
 operator-provided PostgreSQL database through `DATABASE_URL`; it does not create a database,
 manage storage volumes, terminate TLS, or decide who may access the application.
 
+## Release acceptance
+
+Before promoting a new pinned digest, run the repository’s automated release candidate checks
+from a clean checkout:
+
+```bash
+bun install --frozen-lockfile
+bun run lint
+bun run typecheck
+bunx vitest run
+bun run build
+bun run acceptance:container
+```
+
+The final command starts an isolated PostgreSQL 17 container and exercises the built application
+image through Capture, completion, correction, deletion, Plan, failure, accessibility, keyboard,
+focus, targets, and 375px–430px layout checks. It does not make a physical-device claim. Record
+the output, image source commit, PostgreSQL version, actual device/browser versions, viewports,
+and any limitation in the versioned acceptance record before release. The required iPhone 15 Pro
+current-Safari and current/previous-Chrome checks remain separate named runs.
+
 ## Image releases
 
 The public image is published to GitHub Container Registry:

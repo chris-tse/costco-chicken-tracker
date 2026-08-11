@@ -192,7 +192,8 @@ identity or moderation, and a single tracking context does not need location inf
 
 **Supersedes:** The auth, invite-code, admin-role, environment-specific OAuth, PlanetScale,
 Vercel-preview, user-profile, store-pipeline, and multi-user data-quality decisions above.
-Those entries remain as historical context only.
+Those entries, and all pre-reset decisions that depend on their user/location model, remain as
+historical context only. They must not be treated as active deployment or product guidance.
 
 **Planning map:** [Wayfinder: Simplify Costco Chicken Tracker to its core loop](https://github.com/chris-tse/costco-chicken-tracker/issues/1)
 
@@ -255,7 +256,8 @@ visit planner rather than as a placeholder.
   supporting distinct-date count instead of a calibrated probability.
 - Include actionable empty and sparse-history states that lead back to Capture.
 - Defer the switchable 15-minute frequency/doneness grid and its planner cross-link until after
-  the capture-plus-planner core works. Reserve `/plan/history` for that secondary Plan view.
+  the capture-plus-planner core works. Do not implement or expose a history route or placeholder
+  in the MVP; a later approved change may introduce that secondary Plan view.
 
 **Why:** A functional planner gives immediate purpose to collecting sightings while keeping the
 first usable application small. Capture remains optimized for walking up to the warming shelf,
@@ -301,3 +303,21 @@ required by the resolved MVP. Deferring database-side analysis and specialized i
 the initial contract small without preventing later optimization.
 
 **Planning decision:** [Define the minimal sighting persistence contract](https://github.com/chris-tse/costco-chicken-tracker/issues/7)
+
+## 2026-08-11
+
+### Acceptance evidence is reproducible but device claims are explicit
+
+The final MVP checkpoint uses a black-box container journey with isolated PostgreSQL for
+reproducible browser and accessibility evidence. The command tests 375px, 390px, and 430px
+portrait layouts, Capture, reload-before-enrichment durability, optional doneness, correction,
+cancel, deletion, recency, Plan states, injected enrichment failure, focus, target dimensions,
+and horizontal overflow.
+
+**Decision:** Keep the automated record separate from physical-device and named-browser claims.
+Only a run on the physical iPhone 15 Pro/current Safari and independently installed current plus
+previous Chrome versions may mark those requirements passed. Chromium emulation and a CI runner
+are useful regression checks, not substitutes for either claim.
+
+**Why:** This preserves a repeatable release gate without fabricating mobile hardware or browser
+coverage that the repository and CI cannot prove by themselves.
