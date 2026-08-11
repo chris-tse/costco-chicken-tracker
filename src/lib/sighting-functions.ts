@@ -5,6 +5,7 @@ import {
   createSightingInputSchema,
   sightingIdSchema,
   updateSightingDonenessInputSchema,
+  weekdaySchema,
 } from "@/lib/sightings";
 
 export const saveSighting = createServerFn({ method: "POST" })
@@ -38,6 +39,14 @@ export const listRecentSightings = createServerFn({ method: "GET" }).handler(
     return sightingOperations.listRecent();
   }
 );
+
+export const listWeekdayEvidence = createServerFn({ method: "GET" })
+  .inputValidator(weekdaySchema)
+  .handler(async ({ data }) => {
+    const { sightingOperations } = await import("@/lib/sightings.server");
+
+    return sightingOperations.listWeekdayEvidence(data);
+  });
 
 export const correctSighting = createServerFn({ method: "POST" })
   .inputValidator(correctSightingInputSchema)

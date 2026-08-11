@@ -77,6 +77,19 @@ export type ListRecentSightingsResult =
 
 export type ListRecentSightings = () => Promise<ListRecentSightingsResult>;
 
+export const weekdaySchema = z.int().min(0).max(6);
+
+export type ListWeekdayEvidenceResult =
+  | {
+      evidence: Array<{ labelDate: string; labelMinute: number }>;
+      ok: true;
+    }
+  | { kind: "unavailable"; message: string; ok: false };
+
+export type ListWeekdayEvidence = (
+  weekday: number
+) => Promise<ListWeekdayEvidenceResult>;
+
 export type DeleteSightingResult =
   | { ok: true }
   | { kind: "not-found"; message: string; ok: false }
@@ -97,6 +110,9 @@ export const DELETE_FAILURE_MESSAGE =
 
 export const RECENT_SIGHTINGS_FAILURE_MESSAGE =
   "Unable to load recent sightings. Try again.";
+
+export const PLANNER_EVIDENCE_FAILURE_MESSAGE =
+  "Unable to load planning evidence. Try again.";
 
 export const SIGHTING_NOT_FOUND_MESSAGE =
   "This sighting is no longer available.";

@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 import { z } from "zod";
-
+import { BottomNavigation } from "@/components/bottom-navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -326,6 +326,7 @@ export function CaptureForm({
             <output aria-live="polite">Preparing capture form…</output>
           </CardContent>
         </Card>
+        <BottomNavigation currentDestination="capture" />
       </div>
     );
   }
@@ -477,6 +478,7 @@ export function CaptureForm({
           sightings={recentSightings}
         />
       ) : null}
+      <BottomNavigation currentDestination="capture" />
     </div>
   );
 }
