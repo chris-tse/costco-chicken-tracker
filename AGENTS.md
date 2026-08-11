@@ -185,3 +185,17 @@ Biome's linter will catch most style and correctness issues automatically. Focus
 4. **Edge cases** — Handle boundary conditions and error states.
 5. **User experience** — Accessibility, performance, and usability considerations.
 6. **Documentation** — Add comments for complex logic, but prefer self-documenting code.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and PRDs are tracked in GitHub Issues. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Triage uses the default five-label vocabulary. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+This is a single-context repository. See `docs/agents/domain.md`.
