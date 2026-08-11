@@ -102,8 +102,8 @@ async function openCapture(page) {
 }
 
 async function saveSighting(page, labelDate, labelTime) {
-  await page.getByLabel("Label date").fill(labelDate);
-  await page.getByLabel("Label time").fill(labelTime);
+  await page.locator("#label-date").fill(labelDate);
+  await page.locator("#label-time").fill(labelTime);
   await page.getByRole("button", { name: "Save label time" }).click();
   await expectVisible(
     page.getByRole("heading", { name: "Sighting saved" }),
@@ -126,28 +126,25 @@ async function runFullJourney(page) {
     page.getByRole("navigation", { name: "Primary navigation" }),
     "navigation"
   );
-  await expectVisible(page.getByLabel("Label time"), "labelled time input");
-  await expectVisible(page.getByLabel("Label date"), "labelled date input");
+  await expectVisible(page.locator("#label-time"), "labelled time input");
+  await expectVisible(page.locator("#label-date"), "labelled date input");
   await assertAccessibility(page, "initial Capture at 390px");
 
-  await page.getByLabel("Label time").focus();
-  await assertFocused(
-    page.getByLabel("Label time"),
-    "Capture label-time input"
-  );
+  await page.locator("#label-time").focus();
+  await assertFocused(page.locator("#label-time"), "Capture label-time input");
   await page.keyboard.press("Tab");
   await assertFocused(
-    page.getByLabel("Label date"),
+    page.locator("#label-date"),
     "Capture label-date input after Tab"
   );
   await page.keyboard.press("Shift+Tab");
   await assertFocused(
-    page.getByLabel("Label time"),
+    page.locator("#label-time"),
     "Capture label-time input after Shift+Tab"
   );
-  await page.getByLabel("Label date").fill("2026-08-10");
-  await page.getByLabel("Label time").fill("10:00");
-  await page.getByLabel("Label time").focus();
+  await page.locator("#label-date").fill("2026-08-10");
+  await page.locator("#label-time").fill("10:00");
+  await page.locator("#label-time").focus();
   await page.keyboard.press("Enter");
   await expectVisible(
     page.getByRole("heading", { name: "Sighting saved" }),

@@ -27,10 +27,24 @@ docker run --detach --name "$DATABASE_NAME" --network "$NETWORK_NAME" \
   postgres:17-alpine >/dev/null
 
 attempt=0
-until docker exec "$DATABASE_NAME" pg_isready -U postgres -d chicken_tracking >/dev/null; do
+until docker logs "$DATABASE_NAME" 2>&1 \
+  | grep --quiet "PostgreSQL init process complete; ready for start up."; do
   attempt=$((attempt + 1))
   if [ "$attempt" -ge 30 ]; then
-    echo "PostgreSQL did not become ready." >&2
+    docker logs "$DATABASE_NAME" >&2
+    echo "PostgreSQL did not finish initialization." >&2
+    exit 1
+  fi
+  sleep 1
+done
+
+attempt=0
+until docker exec "$DATABASE_NAME" psql --set ON_ERROR_STOP=1 --username postgres \
+  --dbname chicken_tracking --command "SELECT 1" >/dev/null; do
+  attempt=$((attempt + 1))
+  if [ "$attempt" -ge 30 ]; then
+    docker logs "$DATABASE_NAME" >&2
+    echo "PostgreSQL did not become queryable." >&2
     exit 1
   fi
   sleep 1
