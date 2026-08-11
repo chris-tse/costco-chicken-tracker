@@ -50,6 +50,10 @@ until docker exec "$DATABASE_NAME" psql --set ON_ERROR_STOP=1 --username postgre
   sleep 1
 done
 
+POSTGRES_VERSION="$(docker exec "$DATABASE_NAME" psql --tuples-only --no-align \
+  --username postgres --dbname chicken_tracking --command "SHOW server_version")"
+echo "PostgreSQL server version: ${POSTGRES_VERSION} (postgres:17-alpine)"
+
 docker exec "$DATABASE_NAME" psql --set ON_ERROR_STOP=1 --username postgres --dbname postgres \
   --command "CREATE ROLE chicken_tracking LOGIN PASSWORD 'chicken_tracking' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT" \
   >/dev/null
