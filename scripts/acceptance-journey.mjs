@@ -281,12 +281,12 @@ async function runFullJourney(page) {
     page.getByRole("heading", { name: "Plan" }),
     "Plan heading"
   );
-  await page.getByLabel("Weekday").selectOption("2");
+  await page.getByLabel("Weekday", { exact: true }).selectOption("2");
   await expectVisible(
     page.getByRole("heading", { name: "No history for this weekday" }),
     "no-weekday-history state"
   );
-  await page.getByLabel("Weekday").selectOption("0");
+  await page.getByLabel("Weekday", { exact: true }).selectOption("0");
   await page.getByLabel("Approximate time").fill("10:00");
   await expectVisible(
     page.getByRole("heading", { name: "Not enough history to compare yet" }),
