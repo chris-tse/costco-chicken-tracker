@@ -311,7 +311,8 @@ async function runFullJourney(page) {
 async function assertNarrowViewports(browser) {
   for (const width of NARROW_VIEWPORTS) {
     const viewport = { height: 844, width };
-    const page = await browser.newPage({ viewport });
+    const context = await browser.newContext({ viewport });
+    const page = await context.newPage();
 
     try {
       await openCapture(page);
@@ -326,7 +327,7 @@ async function assertNarrowViewports(browser) {
       );
       await assertAccessibility(page, `Plan at ${describeViewport(viewport)}`);
     } finally {
-      await page.close();
+      await context.close();
     }
   }
 }
@@ -337,12 +338,13 @@ const browser = await chromium.launch({
 });
 
 try {
-  const page = await browser.newPage({ viewport: JOURNEY_VIEWPORT });
+  const context = await browser.newContext({ viewport: JOURNEY_VIEWPORT });
+  const page = await context.newPage();
 
   try {
     await runFullJourney(page);
   } finally {
-    await page.close();
+    await context.close();
   }
 
   await assertNarrowViewports(browser);
