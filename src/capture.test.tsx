@@ -298,11 +298,11 @@ describe("Capture", () => {
     expect(screen.getByRole("heading", { name: "Capture" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Save label time" }));
 
-    await waitFor(() => {
-      expect(
-        screen.getByRole("heading", { name: "Sighting saved" })
-      ).toBeTruthy();
+    const completionHeading = await screen.findByRole("heading", {
+      name: "Sighting saved",
     });
+    expect(completionHeading).toHaveFocus();
+    expect(completionHeading).toHaveAttribute("tabindex", "-1");
     expect(screen.getByText(COMPLETION_LABEL_TIME_MESSAGE)).toBeTruthy();
     expect(screen.queryByRole("heading", { name: "Capture" })).toBeNull();
     expect(screen.getByRole("button", { name: "Done" })).toBeTruthy();
@@ -333,6 +333,9 @@ describe("Capture", () => {
       "aria-pressed",
       "true"
     );
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Doneness saved as medium."
+    );
     expect(
       screen.getByRole("heading", { name: "Sighting saved" })
     ).toBeTruthy();
@@ -359,6 +362,7 @@ describe("Capture", () => {
         id: 1,
       });
     });
+    expect(screen.getByRole("status")).toHaveTextContent("Doneness cleared.");
   });
 
   it("keeps the saved sighting recoverable when optional enrichment fails", async () => {
@@ -386,6 +390,7 @@ describe("Capture", () => {
       screen.getByRole("heading", { name: "Sighting saved" })
     ).toBeTruthy();
     expect(screen.getByRole("button", { name: "Light" })).toBeEnabled();
+    expect(screen.queryByRole("status")).toBeNull();
   });
 
   it("keeps a not-found response distinct from a saved-sighting failure", async () => {
