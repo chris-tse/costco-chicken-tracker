@@ -34,7 +34,7 @@ function padTimePart(value: number): string {
   return value.toString().padStart(2, "0");
 }
 
-export function getDeviceLabelTime(date: Date): LabelTime {
+function getDeviceLabelTime(date: Date): LabelTime {
   return {
     labelDate: `${date.getFullYear()}-${padTimePart(date.getMonth() + 1)}-${padTimePart(date.getDate())}`,
     labelTime: `${padTimePart(date.getHours())}:${padTimePart(date.getMinutes())}`,
