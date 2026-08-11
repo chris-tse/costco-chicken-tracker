@@ -20,7 +20,7 @@ try {
   await page
     .getByRole("heading", { name: "Sighting saved" })
     .waitFor({ state: "visible" });
-  await page.getByRole("button", { name: "Done" }).click();
+  await page.getByRole("button", { exact: true, name: "Done" }).click();
   await page
     .getByRole("heading", { name: "Capture" })
     .waitFor({ state: "visible" });
