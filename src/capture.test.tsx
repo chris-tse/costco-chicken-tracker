@@ -7,6 +7,8 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
+import { act } from "react";
+import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -22,7 +24,7 @@ vi.mock("@tanstack/react-start", async (importOriginal) => ({
   useServerFn: mockUseServerFn,
 }));
 
-import { CaptureForm, CapturePage, getDeviceLabelTime } from "./app/index";
+import { CaptureForm, CapturePage } from "./app/index";
 
 const DEFAULT_CLOCK = new Date(2026, 7, 11, 14, 5);
 const SAVED_LABEL_TIME_MESSAGE =
@@ -59,30 +61,37 @@ describe("Capture", () => {
     expect(screen.getByLabelText("Label time")).toHaveValue("14:05");
   });
 
-  it("uses the current local day and minute as a controlled clock crosses boundaries", () => {
+  it("hydrates the route with the client-local time after a midnight, month, and year boundary", async () => {
+    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 11, 31, 23, 59));
+    mockUseServerFn.mockReturnValue(mockSaveSighting);
 
-    expect(getDeviceLabelTime(new Date())).toEqual({
-      labelDate: "2026-12-31",
-      labelTime: "23:59",
-    });
+    const serverHtml = renderToString(<CapturePage />);
+    const container = document.createElement("div");
+    container.innerHTML = serverHtml;
+    document.body.append(container);
+
+    expect(container).toHaveTextContent("Preparing capture form");
+    expect(container.querySelector('input[type="time"]')).toBeNull();
 
     vi.advanceTimersByTime(60_000);
 
-    expect(getDeviceLabelTime(new Date())).toEqual({
-      labelDate: "2027-01-01",
-      labelTime: "00:00",
+    let root: ReturnType<typeof hydrateRoot> | undefined;
+    await act(async () => {
+      root = hydrateRoot(container, <CapturePage />);
+      await Promise.resolve();
     });
 
-    vi.advanceTimersByTime(31 * 24 * 60 * 60 * 1000);
+    expect(screen.getByLabelText("Label date")).toHaveValue("2027-01-01");
+    expect(screen.getByLabelText("Label time")).toHaveValue("00:00");
 
-    expect(getDeviceLabelTime(new Date())).toEqual({
-      labelDate: "2027-02-01",
-      labelTime: "00:00",
+    await act(() => {
+      root?.unmount();
     });
+    vi.unstubAllGlobals();
 
-    vi.useRealTimers();
+    expect(screen.queryByLabelText("Label date")).toBeNull();
   });
 
   it("submits through the CapturePage server-function wiring", async () => {
@@ -139,7 +148,9 @@ describe("Capture", () => {
         labelMinute: 480,
       });
     });
-    expect(screen.getByText(SAVED_LABEL_TIME_MESSAGE)).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByText(SAVED_LABEL_TIME_MESSAGE)).toBeTruthy();
+    });
   });
 
   it("submits when Enter is pressed from a label field", async () => {
