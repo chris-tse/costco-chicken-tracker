@@ -56,6 +56,10 @@ type CorrectionFields = {
   labelTime: string;
 };
 
+type CompletedChange =
+  | { kind: "correction"; sighting: Sighting }
+  | { kind: "deletion" };
+
 function labelMinuteToTime(labelMinute: number): string {
   const hour = Math.floor(labelMinute / 60);
   const minute = labelMinute % 60;
@@ -80,9 +84,17 @@ function correctionFieldsFromSighting(sighting: Sighting): CorrectionFields {
   };
 }
 
-function getFocusTarget(isLoading: boolean, isNotFound: boolean): string {
+function getFocusTarget(
+  isLoading: boolean,
+  isNotFound: boolean,
+  hasCompletedChange: boolean
+): string {
   if (isLoading) {
     return "loading";
+  }
+
+  if (hasCompletedChange) {
+    return "completed";
   }
 
   return isNotFound ? "not-found" : "editor";
@@ -146,14 +158,21 @@ export function CorrectionEditor({
   const confirmationRef = useRef<HTMLHeadingElement>(null);
   const [fields, setFields] = useState<CorrectionFields>();
   const [errorMessage, setErrorMessage] = useState<string>();
+  const [completedChange, setCompletedChange] = useState<CompletedChange>();
   const [isConfirmingDeletion, setIsConfirmingDeletion] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isReturningToOrigin, setIsReturningToOrigin] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isNotFound, setIsNotFound] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
+  const [navigationError, setNavigationError] = useState<string>();
 
-  const focusTarget = getFocusTarget(isLoading, isNotFound);
+  const focusTarget = getFocusTarget(
+    isLoading,
+    isNotFound,
+    completedChange !== undefined
+  );
 
   useEffect(() => {
     if (focusTarget !== "loading") {
@@ -216,6 +235,32 @@ export function CorrectionEditor({
     setFields((current) => (current ? { ...current, ...next } : current));
   };
 
+  const returnAfterCompletedChange = async (
+    change: CompletedChange
+  ): Promise<void> => {
+    if (isReturningToOrigin) {
+      return;
+    }
+
+    setNavigationError(undefined);
+    setIsReturningToOrigin(true);
+    try {
+      if (change.kind === "correction") {
+        await onSaved(change.sighting);
+      } else {
+        await onDeleted();
+      }
+    } catch {
+      setNavigationError(
+        change.kind === "correction"
+          ? "Correction saved, but unable to return to Capture. Try again."
+          : "Sighting deleted, but unable to return to Capture. Try again."
+      );
+    } finally {
+      setIsReturningToOrigin(false);
+    }
+  };
+
   const saveCorrection = async (): Promise<void> => {
     if (!fields || isSaving || isDeleting) {
       return;
@@ -240,24 +285,32 @@ export function CorrectionEditor({
 
     setErrorMessage(undefined);
     setIsSaving(true);
+    let result: Awaited<ReturnType<CorrectSighting>>;
     try {
-      const result = await correctSighting(validation.data);
-      if (!result.ok) {
-        if (result.kind === "not-found") {
-          setIsNotFound(true);
-          return;
-        }
+      result = await correctSighting(validation.data);
+    } catch {
+      setErrorMessage("Unable to save this correction. Try again.");
+      setIsSaving(false);
+      return;
+    }
+    setIsSaving(false);
 
-        setErrorMessage(result.message);
+    if (!result.ok) {
+      if (result.kind === "not-found") {
+        setIsNotFound(true);
         return;
       }
 
-      await onSaved(result.sighting);
-    } catch {
-      setErrorMessage("Unable to save this correction. Try again.");
-    } finally {
-      setIsSaving(false);
+      setErrorMessage(result.message);
+      return;
     }
+
+    const change: CompletedChange = {
+      kind: "correction",
+      sighting: result.sighting,
+    };
+    setCompletedChange(change);
+    await returnAfterCompletedChange(change);
   };
 
   const confirmDeletion = async (): Promise<void> => {
@@ -267,25 +320,31 @@ export function CorrectionEditor({
 
     setErrorMessage(undefined);
     setIsDeleting(true);
+    let result: Awaited<ReturnType<DeleteSighting>>;
     try {
-      const result = await deleteSighting(id);
-      if (!result.ok) {
-        if (result.kind === "not-found") {
-          setIsNotFound(true);
-          setIsConfirmingDeletion(false);
-          return;
-        }
+      result = await deleteSighting(id);
+    } catch {
+      setErrorMessage(DELETE_FAILURE_MESSAGE);
+      setIsDeleting(false);
+      return;
+    }
+    setIsDeleting(false);
 
-        setErrorMessage(result.message);
+    if (!result.ok) {
+      if (result.kind === "not-found") {
+        setIsNotFound(true);
+        setIsConfirmingDeletion(false);
         return;
       }
 
-      await onDeleted();
-    } catch {
-      setErrorMessage(DELETE_FAILURE_MESSAGE);
-    } finally {
-      setIsDeleting(false);
+      setErrorMessage(result.message);
+      return;
     }
+
+    const change: CompletedChange = { kind: "deletion" };
+    setIsConfirmingDeletion(false);
+    setCompletedChange(change);
+    await returnAfterCompletedChange(change);
   };
 
   const handleSubmit = async (
@@ -320,6 +379,35 @@ export function CorrectionEditor({
         <Button
           className="mt-6 h-12 text-base"
           onClick={async () => await returnWithoutSaving(onNotFoundReturn)}
+          type="button"
+        >
+          Return to Capture
+        </Button>
+      </CorrectionFrame>
+    );
+  }
+
+  if (completedChange) {
+    const heading =
+      completedChange.kind === "correction"
+        ? "Correction saved"
+        : "Sighting deleted";
+
+    return (
+      <CorrectionFrame heading={heading} headingRef={headingRef}>
+        {navigationError ? (
+          <p className="text-destructive" role="alert">
+            {navigationError}
+          </p>
+        ) : (
+          <output aria-live="polite">Returning to Capture…</output>
+        )}
+        <Button
+          className="mt-6 h-12 text-base"
+          disabled={isReturningToOrigin}
+          onClick={async () =>
+            await returnAfterCompletedChange(completedChange)
+          }
           type="button"
         >
           Return to Capture
