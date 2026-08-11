@@ -12,7 +12,11 @@ import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { type CreateSighting, SAVE_FAILURE_MESSAGE } from "@/lib/sightings";
+import {
+  type CreateSighting,
+  SAVE_FAILURE_MESSAGE,
+  type UpdateSightingDoneness,
+} from "@/lib/sightings";
 
 const { mockSaveSighting, mockUseServerFn } = vi.hoisted(() => ({
   mockSaveSighting: vi.fn(),
@@ -29,6 +33,8 @@ import { CaptureForm, CapturePage } from "./app/index";
 const DEFAULT_CLOCK = new Date(2026, 7, 11, 14, 5);
 const SAVED_LABEL_TIME_MESSAGE =
   /Saved label time for August 11, 2026 at 8:00 AM/;
+const COMPLETION_LABEL_TIME_MESSAGE =
+  /Saved label time for August 11, 2026 at 2:05 PM/;
 
 afterEach(() => {
   cleanup();
@@ -36,8 +42,26 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-function renderCapture(saveSighting: CreateSighting): void {
-  render(<CaptureForm now={() => DEFAULT_CLOCK} saveSighting={saveSighting} />);
+const createSavedSighting = () => ({
+  createdAt: DEFAULT_CLOCK,
+  doneness: null,
+  id: 1,
+  labelDate: "2026-08-11",
+  labelMinute: 845,
+  updatedAt: DEFAULT_CLOCK,
+});
+
+function renderCapture(
+  saveSighting: CreateSighting,
+  updateSightingDoneness: UpdateSightingDoneness = vi.fn()
+): void {
+  render(
+    <CaptureForm
+      now={() => DEFAULT_CLOCK}
+      saveSighting={saveSighting}
+      updateSightingDoneness={updateSightingDoneness}
+    />
+  );
 }
 
 describe("Capture", () => {
@@ -262,5 +286,140 @@ describe("Capture", () => {
     ).toBeEnabled();
     expect(screen.getByLabelText("Label date")).toHaveValue("2026-08-11");
     expect(screen.getByLabelText("Label time")).toHaveValue("14:05");
+  });
+
+  it("shows full-screen completion only after label time is durably created", async () => {
+    const saveSighting = vi.fn().mockResolvedValue({
+      ok: true,
+      sighting: createSavedSighting(),
+    });
+    renderCapture(saveSighting);
+
+    expect(screen.getByRole("heading", { name: "Capture" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Save label time" }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: "Sighting saved" })
+      ).toBeTruthy();
+    });
+    expect(screen.getByText(COMPLETION_LABEL_TIME_MESSAGE)).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Capture" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Done" })).toBeTruthy();
+  });
+
+  it("immediately persists a selected doneness while completion stays open", async () => {
+    const saveSighting = vi.fn().mockResolvedValue({
+      ok: true,
+      sighting: createSavedSighting(),
+    });
+    const updateSightingDoneness = vi.fn().mockResolvedValue({
+      ok: true,
+      sighting: { ...createSavedSighting(), doneness: "medium" as const },
+    });
+    renderCapture(saveSighting, updateSightingDoneness);
+
+    fireEvent.click(screen.getByRole("button", { name: "Save label time" }));
+    await screen.findByRole("heading", { name: "Sighting saved" });
+    fireEvent.click(screen.getByRole("button", { name: "Medium" }));
+
+    await waitFor(() => {
+      expect(updateSightingDoneness).toHaveBeenCalledWith({
+        doneness: "medium",
+        id: 1,
+      });
+    });
+    expect(screen.getByRole("button", { name: "Medium" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    expect(
+      screen.getByRole("heading", { name: "Sighting saved" })
+    ).toBeTruthy();
+  });
+
+  it("clears selected doneness by storing null", async () => {
+    const saveSighting = vi.fn().mockResolvedValue({
+      ok: true,
+      sighting: { ...createSavedSighting(), doneness: "dark" as const },
+    });
+    const updateSightingDoneness = vi.fn().mockResolvedValue({
+      ok: true,
+      sighting: createSavedSighting(),
+    });
+    renderCapture(saveSighting, updateSightingDoneness);
+
+    fireEvent.click(screen.getByRole("button", { name: "Save label time" }));
+    await screen.findByRole("heading", { name: "Sighting saved" });
+    fireEvent.click(screen.getByRole("button", { name: "Clear doneness" }));
+
+    await waitFor(() => {
+      expect(updateSightingDoneness).toHaveBeenCalledWith({
+        doneness: null,
+        id: 1,
+      });
+    });
+  });
+
+  it("keeps the saved sighting recoverable when optional enrichment fails", async () => {
+    const saveSighting = vi.fn().mockResolvedValue({
+      ok: true,
+      sighting: createSavedSighting(),
+    });
+    const updateSightingDoneness = vi.fn().mockResolvedValue({
+      message: "Unable to save doneness. Try again.",
+      ok: false,
+    });
+    renderCapture(saveSighting, updateSightingDoneness);
+
+    fireEvent.click(screen.getByRole("button", { name: "Save label time" }));
+    await screen.findByRole("heading", { name: "Sighting saved" });
+    fireEvent.click(screen.getByRole("button", { name: "Light" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "label time remains saved"
+      );
+    });
+    expect(
+      screen.getByRole("heading", { name: "Sighting saved" })
+    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Light" })).toBeEnabled();
+  });
+
+  it("returns to fresh Capture without enriching when Done is selected", async () => {
+    const saveSighting = vi.fn().mockResolvedValue({
+      ok: true,
+      sighting: createSavedSighting(),
+    });
+    const updateSightingDoneness = vi.fn();
+    renderCapture(saveSighting, updateSightingDoneness);
+
+    fireEvent.click(screen.getByRole("button", { name: "Save label time" }));
+    await screen.findByRole("heading", { name: "Sighting saved" });
+    fireEvent.click(screen.getByRole("button", { name: "Done" }));
+
+    expect(updateSightingDoneness).not.toHaveBeenCalled();
+    expect(screen.getByRole("heading", { name: "Capture" })).toBeTruthy();
+    expect(screen.getByLabelText("Label date")).toHaveValue("2026-08-11");
+    expect(screen.getByLabelText("Label time")).toHaveValue("14:05");
+  });
+
+  it("leaves the durable creation intact when completion is interrupted", async () => {
+    const saveSighting = vi.fn().mockResolvedValue({
+      ok: true,
+      sighting: createSavedSighting(),
+    });
+    renderCapture(saveSighting);
+
+    fireEvent.click(screen.getByRole("button", { name: "Save label time" }));
+    await screen.findByRole("heading", { name: "Sighting saved" });
+    cleanup();
+
+    expect(saveSighting).toHaveBeenCalledTimes(1);
+    expect(saveSighting).toHaveBeenCalledWith({
+      labelDate: "2026-08-11",
+      labelMinute: 845,
+    });
   });
 });

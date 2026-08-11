@@ -101,5 +101,69 @@ if (databaseUrl) {
         "sightings_recent_idx",
       ]);
     });
+
+    it("updates only nullable doneness and advances the update instant", async () => {
+      const database = drizzle(databaseUrl, { schema });
+      const { createSightingOperations } = await import("./sightings.server");
+      const operations = createSightingOperations(database);
+
+      try {
+        const created = await operations.create({
+          labelDate: "2024-02-29",
+          labelMinute: 480,
+        });
+        expect(created.ok).toBe(true);
+        if (!created.ok) {
+          return;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        const enriched = await operations.updateDoneness({
+          doneness: "dark",
+          id: created.sighting.id,
+        });
+
+        expect(enriched).toMatchObject({
+          ok: true,
+          sighting: {
+            doneness: "dark",
+            id: created.sighting.id,
+            labelDate: "2024-02-29",
+            labelMinute: 480,
+          },
+        });
+        expect(
+          enriched.ok && enriched.sighting.updatedAt.getTime()
+        ).toBeGreaterThan(created.sighting.updatedAt.getTime());
+
+        const cleared = await operations.updateDoneness({
+          doneness: null,
+          id: created.sighting.id,
+        });
+        expect(cleared).toMatchObject({
+          ok: true,
+          sighting: { doneness: null, id: created.sighting.id },
+        });
+      } finally {
+        await database.$client.end();
+      }
+    });
+
+    it("returns a structured result when the targeted sighting is missing", async () => {
+      const database = drizzle(databaseUrl, { schema });
+      const { createSightingOperations } = await import("./sightings.server");
+      const operations = createSightingOperations(database);
+
+      try {
+        await expect(
+          operations.updateDoneness({ doneness: "light", id: 99 })
+        ).resolves.toEqual({
+          message: "This sighting is no longer available.",
+          ok: false,
+        });
+      } finally {
+        await database.$client.end();
+      }
+    });
   });
 }

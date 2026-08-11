@@ -6,13 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { saveSighting } from "@/lib/sighting-functions";
+import { saveSighting, updateSightingDoneness } from "@/lib/sighting-functions";
 import {
   type CreateSighting,
   type CreateSightingInput,
   createSightingInputSchema,
+  DONENESS_FAILURE_MESSAGE,
+  DONENESS_VALUES,
   SAVE_FAILURE_MESSAGE,
   type Sighting,
+  type UpdateSightingDoneness,
 } from "@/lib/sightings";
 
 export const Route = createFileRoute("/")({
@@ -76,19 +79,32 @@ function formatSavedLabelTime(sighting: Sighting): string {
 
 export function CapturePage(): ReactNode {
   const save = useServerFn(saveSighting);
+  const updateDoneness = useServerFn(updateSightingDoneness);
   const saveSightingFromRoute: CreateSighting = async (input) => {
     return await save({ data: input });
   };
+  const updateSightingDonenessFromRoute: UpdateSightingDoneness = async (
+    input
+  ) => {
+    return await updateDoneness({ data: input });
+  };
 
-  return <CaptureForm saveSighting={saveSightingFromRoute} />;
+  return (
+    <CaptureForm
+      saveSighting={saveSightingFromRoute}
+      updateSightingDoneness={updateSightingDonenessFromRoute}
+    />
+  );
 }
 
 export function CaptureForm({
   now = getCurrentDeviceTime,
   saveSighting,
+  updateSightingDoneness,
 }: Readonly<{
   now?: () => Date;
   saveSighting: CreateSighting;
+  updateSightingDoneness?: UpdateSightingDoneness;
 }>): ReactNode {
   const [labelTime, setLabelTime] = useState<LabelTime>();
   const [errorMessage, setErrorMessage] = useState<string>();
@@ -98,6 +114,20 @@ export function CaptureForm({
   useEffect(() => {
     setLabelTime(getDeviceLabelTime(now()));
   }, [now]);
+
+  if (savedSighting && updateSightingDoneness) {
+    return (
+      <SightingCompletion
+        onDone={() => {
+          setErrorMessage(undefined);
+          setLabelTime(getDeviceLabelTime(now()));
+          setSavedSighting(undefined);
+        }}
+        sighting={savedSighting}
+        updateSightingDoneness={updateSightingDoneness}
+      />
+    );
+  }
 
   if (!labelTime) {
     return (
@@ -255,11 +285,6 @@ export function CaptureForm({
             {isSaving ? (
               <output aria-live="polite">Saving label time…</output>
             ) : null}
-            {savedSighting ? (
-              <output aria-live="polite" className="text-success-foreground">
-                {formatSavedLabelTime(savedSighting)}
-              </output>
-            ) : null}
             <Button
               className="h-12 text-base"
               disabled={isSaving}
@@ -271,5 +296,123 @@ export function CaptureForm({
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function SightingCompletion({
+  onDone,
+  sighting,
+  updateSightingDoneness,
+}: Readonly<{
+  onDone: () => void;
+  sighting: Sighting;
+  updateSightingDoneness: UpdateSightingDoneness;
+}>): ReactNode {
+  const [currentSighting, setCurrentSighting] = useState(sighting);
+  const [errorMessage, setErrorMessage] = useState<string>();
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const saveDoneness = async (
+    doneness: Sighting["doneness"]
+  ): Promise<void> => {
+    if (isUpdating || doneness === currentSighting.doneness) {
+      return;
+    }
+
+    setErrorMessage(undefined);
+    setIsUpdating(true);
+    try {
+      const result = await updateSightingDoneness({
+        doneness,
+        id: currentSighting.id,
+      });
+
+      if (!result.ok) {
+        setErrorMessage(`${result.message} The label time remains saved.`);
+        return;
+      }
+
+      setCurrentSighting(result.sighting);
+    } catch {
+      setErrorMessage(
+        `${DONENESS_FAILURE_MESSAGE} The label time remains saved.`
+      );
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  return (
+    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col px-4 py-8">
+      <header className="mb-8">
+        <p className="font-medium text-muted-foreground text-sm">
+          Chicken Tracking
+        </p>
+        <h1 className="mt-2 font-semibold text-4xl tracking-tight">
+          Sighting saved
+        </h1>
+        <p className="mt-2 text-muted-foreground">
+          {formatSavedLabelTime(currentSighting)}
+        </p>
+      </header>
+      <Card>
+        <CardHeader>
+          <CardTitle>Optional doneness</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-6">
+          <p className="text-muted-foreground text-sm">
+            Record how the chicken looked, or leave this unrecorded.
+          </p>
+          <fieldset className="grid gap-3">
+            <legend className="sr-only">Doneness</legend>
+            {DONENESS_VALUES.map((doneness) => (
+              <Button
+                aria-pressed={currentSighting.doneness === doneness}
+                className="h-12 justify-start text-base capitalize"
+                disabled={isUpdating}
+                key={doneness}
+                onClick={() => saveDoneness(doneness)}
+                type="button"
+                variant={
+                  currentSighting.doneness === doneness ? "default" : "outline"
+                }
+              >
+                {`${doneness[0]?.toUpperCase()}${doneness.slice(1)}`}
+              </Button>
+            ))}
+            <Button
+              aria-pressed={currentSighting.doneness === null}
+              className="h-12 justify-start text-base"
+              disabled={isUpdating || currentSighting.doneness === null}
+              onClick={() => saveDoneness(null)}
+              type="button"
+              variant="outline"
+            >
+              Clear doneness
+            </Button>
+          </fieldset>
+          {isUpdating ? (
+            <output aria-live="polite">Saving doneness…</output>
+          ) : null}
+          {errorMessage ? (
+            <p
+              aria-live="assertive"
+              className="text-destructive text-sm"
+              role="alert"
+            >
+              {errorMessage}
+            </p>
+          ) : null}
+          <Button
+            className="h-12 text-base"
+            disabled={isUpdating}
+            onClick={onDone}
+            type="button"
+          >
+            Done
+          </Button>
+        </CardContent>
+      </Card>
+    </main>
   );
 }
