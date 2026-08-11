@@ -148,6 +148,27 @@ describe("Correction", () => {
     expect(deleteSighting).not.toHaveBeenCalled();
   });
 
+  it("keeps the loaded editor available when Cancel cannot return to Capture", async () => {
+    const onCancel = vi
+      .fn<() => Promise<void>>()
+      .mockRejectedValue(new Error("Navigation unavailable"));
+    const { correctSighting, deleteSighting } = renderCorrection({ onCancel });
+
+    await screen.findByLabelText("Label date");
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "Unable to return to Capture. Try again."
+      );
+    });
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(correctSighting).not.toHaveBeenCalled();
+    expect(deleteSighting).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("Label date")).toHaveValue("2026-08-11");
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeEnabled();
+  });
+
   it("keeps corrected facts visible after a correction failure and provides a retry path", async () => {
     const correctSighting = vi.fn().mockResolvedValue({
       kind: "unavailable",

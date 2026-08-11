@@ -427,7 +427,7 @@ export function CorrectionEditor({
             <Button
               className="h-12 text-base"
               disabled={isSaving || isDeleting}
-              onClick={onCancel}
+              onClick={async () => await returnWithoutSaving(onCancel)}
               type="button"
               variant="outline"
             >
