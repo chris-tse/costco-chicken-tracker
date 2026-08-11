@@ -144,9 +144,9 @@ async function assertAlert(locator, description) {
 }
 
 async function assertDeletionDialog(page) {
-  const dialog = page.getByRole("dialog", {
-    name: "Permanently delete this sighting?",
-  });
+  const dialog = page
+    .locator('[role="alertdialog"], [role="dialog"]')
+    .filter({ hasText: "Permanently delete this sighting?" });
   await expectVisible(dialog, "deletion confirmation dialog");
   ensure(
     (await dialog.getAttribute("aria-modal")) === "true",
