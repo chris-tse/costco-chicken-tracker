@@ -376,7 +376,6 @@ async function runFullJourney(page, viewport, fixtureIndex) {
     const requestBody = request.postData() ?? "";
     const isDonenessUpdate =
       request.method() === "POST" &&
-      request.headerValue("x-tsr-serverfn") === "true" &&
       requestBody.includes(`"id":${expectedFailureSightingId}`) &&
       requestBody.includes('"doneness":"light"');
 
