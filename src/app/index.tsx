@@ -102,6 +102,8 @@ function formatRecentSighting(sighting: Sighting): string {
   return formatSavedLabelTime(sighting).replace("Saved label time for ", "");
 }
 
+const DONENESS_REQUEST_TIMEOUT_MS = 5000;
+
 function CaptureRoute(): ReactNode {
   const { completion } = Route.useSearch();
   const navigate = useNavigate();
@@ -116,8 +118,8 @@ function CaptureRoute(): ReactNode {
     [save]
   );
   const updateSightingDonenessFromRoute = useCallback<UpdateSightingDoneness>(
-    async (input) => {
-      return await updateDoneness({ data: input });
+    async (input, options) => {
+      return await updateDoneness({ data: input, signal: options?.signal });
     },
     [updateDoneness]
   );
@@ -170,8 +172,8 @@ export function CapturePage(): ReactNode {
     [save]
   );
   const updateSightingDonenessFromRoute = useCallback<UpdateSightingDoneness>(
-    async (input) => {
-      return await updateDoneness({ data: input });
+    async (input, options) => {
+      return await updateDoneness({ data: input, signal: options?.signal });
     },
     [updateDoneness]
   );
@@ -597,11 +599,18 @@ function SightingCompletion({
     setErrorMessage(undefined);
     setSuccessMessage(undefined);
     setIsUpdating(true);
+    const requestController = new AbortController();
+    const timeoutId = setTimeout(() => {
+      requestController.abort();
+    }, DONENESS_REQUEST_TIMEOUT_MS);
     try {
-      const result = await updateSightingDoneness({
-        doneness,
-        id: currentSighting.id,
-      });
+      const result = await updateSightingDoneness(
+        {
+          doneness,
+          id: currentSighting.id,
+        },
+        { signal: requestController.signal }
+      );
 
       if (!result.ok) {
         if (result.kind === "not-found") {
@@ -624,6 +633,7 @@ function SightingCompletion({
         `${DONENESS_FAILURE_MESSAGE} The label time remains saved.`
       );
     } finally {
+      clearTimeout(timeoutId);
       setIsUpdating(false);
     }
   };

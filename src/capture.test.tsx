@@ -39,6 +39,7 @@ const COMPLETION_LABEL_TIME_MESSAGE =
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  vi.unstubAllGlobals();
   vi.useRealTimers();
 });
 
@@ -326,10 +327,13 @@ describe("Capture", () => {
     fireEvent.click(screen.getByRole("button", { name: "Medium" }));
 
     await waitFor(() => {
-      expect(updateSightingDoneness).toHaveBeenCalledWith({
-        doneness: "medium",
-        id: 1,
-      });
+      expect(updateSightingDoneness).toHaveBeenCalledWith(
+        {
+          doneness: "medium",
+          id: 1,
+        },
+        { signal: expect.any(AbortSignal) }
+      );
     });
     expect(screen.getByRole("button", { name: "Medium" })).toHaveAttribute(
       "aria-pressed",
@@ -359,10 +363,13 @@ describe("Capture", () => {
     fireEvent.click(screen.getByRole("button", { name: "Clear doneness" }));
 
     await waitFor(() => {
-      expect(updateSightingDoneness).toHaveBeenCalledWith({
-        doneness: null,
-        id: 1,
-      });
+      expect(updateSightingDoneness).toHaveBeenCalledWith(
+        {
+          doneness: null,
+          id: 1,
+        },
+        { signal: expect.any(AbortSignal) }
+      );
     });
     expect(screen.getByRole("status")).toHaveTextContent("Doneness cleared.");
   });
@@ -393,6 +400,38 @@ describe("Capture", () => {
     ).toBeTruthy();
     expect(screen.getByRole("button", { name: "Light" })).toBeEnabled();
     expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("stops waiting for optional enrichment after five seconds", async () => {
+    const saveSighting = vi.fn().mockResolvedValue({
+      ok: true,
+      sighting: createSavedSighting(),
+    });
+    const updateSightingDoneness = vi.fn(
+      (_input, options?: { signal?: AbortSignal }) =>
+        new Promise<never>((_resolve, reject) => {
+          options?.signal?.addEventListener("abort", () => {
+            reject(new DOMException("Request timed out", "AbortError"));
+          });
+        })
+    );
+    renderCapture(saveSighting, updateSightingDoneness);
+
+    fireEvent.click(screen.getByRole("button", { name: "Save label time" }));
+    await screen.findByRole("heading", { name: "Sighting saved" });
+    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+    vi.useFakeTimers();
+    fireEvent.click(screen.getByRole("button", { name: "Light" }));
+
+    expect(screen.getByRole("status")).toHaveTextContent("Saving doneness…");
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5000);
+    });
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Unable to save doneness. Try again. The label time remains saved."
+    );
+    expect(screen.getByRole("button", { name: "Light" })).toBeEnabled();
   });
 
   it("keeps a not-found response distinct from a saved-sighting failure", async () => {
