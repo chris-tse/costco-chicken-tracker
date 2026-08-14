@@ -43,7 +43,8 @@ export type UpdateSightingDonenessResult =
   | { kind: "unavailable"; message: string; ok: false };
 
 export type UpdateSightingDoneness = (
-  input: UpdateSightingDonenessInput
+  input: UpdateSightingDonenessInput,
+  options?: Readonly<{ signal?: AbortSignal }>
 ) => Promise<UpdateSightingDonenessResult>;
 
 export const sightingIdSchema = z.int().positive();
