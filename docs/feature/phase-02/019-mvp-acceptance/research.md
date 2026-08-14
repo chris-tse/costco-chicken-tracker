@@ -24,3 +24,8 @@
 - TanStack Start server functions accept an `AbortSignal` and pass it to their underlying fetch.
   The doneness enrichment request can therefore be canceled at the transport boundary after five
   seconds while keeping the already-created sighting recoverable.
+- The physical retest exposed a second boundary: aborting the browser request did not cancel a
+  PostgreSQL operation already queued in the server pool. After PostgreSQL restarted, that stale
+  operation wrote doneness even though Safari had reported failure. Runtime database connection,
+  query, and statement deadlines must therefore expire before the browser deadline so a timed-out
+  enrichment cannot execute later.
