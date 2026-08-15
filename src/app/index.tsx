@@ -105,7 +105,7 @@ function OutsideStoreHoursWarning({
       />
       <div>
         <p className="font-semibold text-sm">Outside store hours</p>
-        <p className="text-muted-foreground text-xs">
+        <p className="text-foreground text-xs">
           Check that the label time is correct.
         </p>
       </div>
