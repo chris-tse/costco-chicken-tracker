@@ -29,3 +29,19 @@
   operation wrote doneness even though Safari had reported failure. Runtime database connection,
   query, and statement deadlines must therefore expire before the browser deadline so a timed-out
   enrichment cannot execute later.
+
+## 2026-08-15 — physical design observations
+
+The completed iPhone 15 Pro portrait journey on the Safari bundled with iOS 27.0 beta was fully
+functional. Reference screenshots captured three non-blocking visual-design follow-ups:
+
+- Increase the visual prominence of the outside-store-hours state so it is unmistakably abnormal.
+- Present Clear doneness as a smaller secondary/reset action rather than as a fourth full-size
+  radio-style choice beside Light, Medium, and Dark.
+- Compose the Plan inputs into the sentence itself (for example, “I'm planning on going [weekday]
+  at around [time]”) rather than showing a detached summary followed by conventionally labelled
+  controls.
+
+No GitHub follow-up issues were created during the PR #26 gate. If these screenshots are later
+attached to GitHub issues, publish them through an empty release and use the resulting GitHub-hosted
+image URLs rather than local attachment paths.
