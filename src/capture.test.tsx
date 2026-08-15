@@ -164,6 +164,9 @@ describe("Capture", () => {
       target: { value: "08:00" },
     });
     expect(screen.getByText("Outside store hours")).toBeTruthy();
+    expect(
+      screen.getByText("Check that the label time is correct.")
+    ).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Save label time" }));
 

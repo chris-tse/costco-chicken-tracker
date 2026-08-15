@@ -45,3 +45,24 @@ functional. Reference screenshots captured three non-blocking visual-design foll
 No GitHub follow-up issues were created during the PR #26 gate. If these screenshots are later
 attached to GitHub issues, publish them through an empty release and use the resulting GitHub-hosted
 image URLs rather than local attachment paths.
+
+## 2026-08-15 — outside-hours warning prototype
+
+Question: which visual hierarchy makes an outside-store-hours label time feel unmistakably
+abnormal without preventing a valid save?
+
+The throwaway `prototype/outside-store-hours` branch places three treatments in the real Capture
+form, switchable with `?hoursVariant=a`, `b`, or `c`. The variants compare an inline caution, a
+destructive stop panel, and a compact time-comparison treatment. No production choice has been
+made, and saving behavior is unchanged.
+
+After review, the inline caution in variant A was selected as the direction for another prototype
+round. Variants B and C now riff on A's light warning palette and non-blocking tone: a contained
+soft banner and a compact entered-time/usual-hours comparison. The earlier black-and-amber variant
+was removed because its visual association was inappropriate for the product.
+
+Variant A remained the preferred direction. Its left warning rail was removed because the narrow
+accent read as a visual "fingernail"; the icon, light warning wash, hierarchy, and copy remain.
+
+The final A treatment was approved for production. The throwaway variant query parameter,
+switcher, and unused treatments are not part of the production implementation.

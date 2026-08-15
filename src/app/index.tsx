@@ -1,3 +1,4 @@
+// biome-ignore assist/source/organizeImports: Imports follow the repository's documented group order.
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -8,7 +9,10 @@ import {
   useRef,
   useState,
 } from "react";
+
+import { AlertTriangle } from "lucide-react";
 import { z } from "zod";
+
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -78,6 +82,34 @@ function isOutsideStoreHours(labelMinute: number | undefined): boolean {
   return (
     labelMinute !== undefined &&
     (labelMinute < STORE_OPENING_MINUTE || labelMinute > STORE_CLOSING_MINUTE)
+  );
+}
+
+function OutsideStoreHoursWarning({
+  outsideStoreHours,
+}: Readonly<{
+  outsideStoreHours: boolean;
+}>): ReactNode {
+  if (!outsideStoreHours) {
+    return null;
+  }
+
+  return (
+    <div
+      className="flex items-start gap-3 bg-warning/15 px-3 py-2"
+      id="store-hours-warning"
+    >
+      <AlertTriangle
+        aria-hidden="true"
+        className="mt-0.5 size-5 shrink-0 text-warning-foreground"
+      />
+      <div>
+        <p className="font-semibold text-sm">Outside store hours</p>
+        <p className="text-muted-foreground text-xs">
+          Check that the label time is correct.
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -430,14 +462,7 @@ export function CaptureForm({
                 type="time"
                 value={labelTime.labelTime}
               />
-              {outsideStoreHours ? (
-                <p
-                  className="text-sm text-warning-foreground"
-                  id="store-hours-warning"
-                >
-                  Outside store hours
-                </p>
-              ) : null}
+              <OutsideStoreHoursWarning outsideStoreHours={outsideStoreHours} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="label-date">Label date</Label>
