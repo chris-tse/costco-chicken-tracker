@@ -30,6 +30,23 @@ bunx vitest watch                         # Watch mode
 Testing uses **Vitest** + **React Testing Library** (`@testing-library/react`,
 `@testing-library/jest-dom`) with `jsdom` as the environment.
 
+### Local PostgreSQL
+
+A persistent Docker PostgreSQL fixture is available for local development and integration testing.
+Prefer it over creating another database when isolated data is not required.
+
+- PostgreSQL container: `costco-chicken-tracker-postgres17`
+- Fixture database: `chicken_tracking_acceptance_final`
+- Reference app container: `costco-chicken-tracker-app-438fdb87aa6b-final`
+- The database port is not published to the host. For host-run processes, inspect the PostgreSQL
+  container for its current Docker-network IP and use port `5432`.
+- Obtain the local-only `DATABASE_URL` credentials from the reference app container metadata, then
+  replace its container hostname with the PostgreSQL container IP. Do not commit the credentials.
+- The long-lived agent process may not inherit the user's `docker` group. If Docker reports a
+  permission error, run the required read-only Docker command through a `newgrp docker` heredoc.
+- Preserve this database, its container, and its volume unless the user explicitly requests
+  removal. Tests that mutate or reset data should use a separate database.
+
 ---
 
 ## Code Style Guidelines

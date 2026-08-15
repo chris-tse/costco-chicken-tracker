@@ -340,3 +340,14 @@ product owner explicitly accepted the iOS 27.0 beta bundled-Safari result instea
 MVP while preserving the browser-channel limitation in the evidence.
 
 **Planning decision:** [Complete MVP acceptance and documentation reconciliation](https://github.com/chris-tse/costco-chicken-tracker/issues/19)
+
+### Emphasize outside-store-hours as a non-blocking caution
+
+**Decision:** Show an icon, light warning-color wash, bold “Outside store hours” heading, and a
+short prompt to check the label time. Do not use a left accent rail or treat the state as a
+destructive error. Continue allowing the sighting to be saved.
+
+**Why:** Physical acceptance showed that the original text-only message was too easy to miss. A
+three-variant prototype established that a compact inline caution is prominent without implying
+that an unusual but valid label time is forbidden. The left rail was removed because its narrow
+shape read as an unintended visual “fingernail.”
