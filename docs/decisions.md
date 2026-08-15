@@ -321,3 +321,22 @@ are useful regression checks, not substitutes for either claim.
 
 **Why:** This preserves a repeatable release gate without fabricating mobile hardware or browser
 coverage that the repository and CI cannot prove by themselves.
+
+## 2026-08-15
+
+### Accept the physical beta-Safari journey for the private MVP
+
+**Decision:** Accept the complete iPhone 15 Pro portrait journey on the Safari bundled with iOS
+27.0 beta as sufficient physical Safari evidence for the private MVP. Keep the beta channel explicit
+in the acceptance record; do not describe it as a stable-Safari run.
+
+**Why:** The physical journey exercised the complete Capture, recovery, correction, deletion,
+Recent Sightings, and Plan flows on the named device. It exposed two real timeout defects, and the
+final candidate proved through direct PostgreSQL inspection that the corrected failure path could
+not write later. The remaining observations were non-blocking visual-design concerns.
+
+**Divergence from the prior plan:** The 2026-08-11 decision required current stable Safari. The
+product owner explicitly accepted the iOS 27.0 beta bundled-Safari result instead for this private
+MVP while preserving the browser-channel limitation in the evidence.
+
+**Planning decision:** [Complete MVP acceptance and documentation reconciliation](https://github.com/chris-tse/costco-chicken-tracker/issues/19)
