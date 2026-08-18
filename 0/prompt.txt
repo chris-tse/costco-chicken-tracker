@@ -1,0 +1,1 @@
+no i think we should assume an external db that we just specify the host and creds for
