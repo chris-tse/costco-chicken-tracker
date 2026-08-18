@@ -1,0 +1,10 @@
+<environment_context>
+  <current_date>2026-08-14</current_date>
+  <timezone>America/Chicago</timezone>
+  <filesystem><workspace_roots><root>/home/kafka/code/costco-chicken-tracker</root></workspace_roots><permission_profile type="disabled"><file_system type="unrestricted" /></permission_profile></filesystem>
+  <subagents>
+    - record_19_ci_evidence: Boyle the 2nd
+    - review_19_evidence_final: Gauss the 2nd
+    - review_19_overall_final: Goodall the 2nd
+  </subagents>
+</environment_context>
