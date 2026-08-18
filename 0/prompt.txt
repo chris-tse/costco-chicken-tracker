@@ -1,0 +1,1 @@
+[$wayfinder](/home/kafka/.agents/skills/wayfinder/SKILL.md) #1
