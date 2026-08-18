@@ -1,0 +1,7 @@
+- Outside store hours - the visual state is too normal, it should be very apparent this is abnormal for the user
+- Clear doneness - it probably shouldn't appear to be another "radio button" choice but rather a separate smaller button, maybe of a "ghost" type or something else
+- Plan - rather than a string that reflects the state of the inputs, it should look more integrated. e.g. I'm planning on going <br> <day of week select> <br> at around <br> <time input>
+
+[Attached image "image.png" is saved at: /home/kafka/.t3/userdata/attachments/75d45fb9-2972-4cb2-8476-086b8394143d-4e784788-c92a-4e48-9609-38506c0b2964.png]
+[Attached image "image.png" is saved at: /home/kafka/.t3/userdata/attachments/75d45fb9-2972-4cb2-8476-086b8394143d-8c45c224-3307-4c84-b238-2569dc39157f.png]
+[Attached image "image.png" is saved at: /home/kafka/.t3/userdata/attachments/75d45fb9-2972-4cb2-8476-086b8394143d-eb067c7a-db99-4856-9afe-cc0a917641b4.png]
