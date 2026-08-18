@@ -1,0 +1,1 @@
+yes, the same window doesn't need to be inflated. for now, i'm the only user so that won't be an issue, but yes, we should essentially dedupe
