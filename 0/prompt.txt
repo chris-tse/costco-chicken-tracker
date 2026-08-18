@@ -1,0 +1,3 @@
+/wayfinder skill
+
+Check that #5 is the next open issue and let’s start on that
