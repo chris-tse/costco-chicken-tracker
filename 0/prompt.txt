@@ -1,0 +1,1 @@
+yeah that looks fine. what input component are we using for the time input btw
