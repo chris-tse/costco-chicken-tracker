@@ -1,0 +1,1 @@
+Any reason we can’t just store as a varchar (7) for XX:XXam / XX:XXpm then parse?
