@@ -1,0 +1,1 @@
+Confirmed. Some weird UX/layout issues, but fully functional. I’m on latest iOS 27 beta
