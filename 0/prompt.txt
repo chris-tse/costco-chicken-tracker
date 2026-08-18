@@ -1,0 +1,1 @@
+Let’s just spin up a system wide docker Postgres and just use that for local
