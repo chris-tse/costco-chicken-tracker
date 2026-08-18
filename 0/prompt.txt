@@ -1,0 +1,1 @@
+we can pencil in app logic for analysis, but with a plan to fallback to postgres to do the calculations if it ends up being too slow
