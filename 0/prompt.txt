@@ -1,0 +1,1 @@
+we can add to the local AGENTS.md that a local docker postgres exists and to use that for local testing
