@@ -1,0 +1,1 @@
+If you plan on recording them to github issues in any way, use the workaround of publishing an empty release with attachments and using the github image urls that are generated
