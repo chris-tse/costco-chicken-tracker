@@ -1,0 +1,8 @@
+1. We can even get rid of location. Just pure chicken tracking with historical viz
+2. Just one. Descope location entirely, with notes on adding it back later 
+3. Time and optional field for “doneness”
+4. Kill everything but doneness
+5. The viz should tell enough of a story on its own
+6. Initially had this hosted on Vercel, but I’m thinking I may just throw this on my own local server for now, we can kill the remote db connections too and go full local pg. I’ll have local pg on that server set up that I’ll just need a user and db name to set up
+7. Go ahead and trash it, we’re starting fresh
+8. Killing locations for now so defer
