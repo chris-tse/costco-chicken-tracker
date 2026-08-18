@@ -1,0 +1,1 @@
+I’ve verified on the still hooked up Vercel review environment that it works, but there’s no sql hooked up on it so I can’t actually test the full flow. Can we set up something local
