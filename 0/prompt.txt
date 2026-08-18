@@ -1,0 +1,1 @@
+What are nuances around full replace vs spot patches
