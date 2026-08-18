@@ -1,0 +1,5 @@
+yeah that looks goodd
+
+now, i did say 15 minute buckets, but now that i think some more, i'm wondering if that's even the right approach. a chicken the 2:00-2:15 bucket doesn't tell me much when I arrive at 2:16, is it an older chicken at 2:01, or a super fresh 2:14 chicken right?
+
+what if we were to somehow show info based on the current or user-specified time at a +/- 10 minute window for that day of the week to see if there's a fresh chicken based on that time data
