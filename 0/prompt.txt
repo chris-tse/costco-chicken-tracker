@@ -1,0 +1,1 @@
+For future reviews, standards should be gated only by linter. If it passes linter, that’s good enough. If the linter is missing rules then it should be added
