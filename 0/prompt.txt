@@ -1,0 +1,1 @@
+i think the grid view we decided on before is still good as a secondary view, some sort of "visit planner" view, but yeah, a better use case is "if i go to costco now, will there be a fresh chicken when i get there"
