@@ -1,0 +1,5 @@
+So I’ve been working on this, check current code and docs for the progress I had and what I was working on. I had a lot planned out, but honestly I had some scope creep going on with auth and multiple users. Let’s keep this simple and trim out the fat. 
+
+One user only, just me. No need for auth, going to serve this behind Tailscale or cloudflare zero trust. I just want to get the core functionality working. 
+
+Ask me any questions you need, then invoke /wayfinder skill
