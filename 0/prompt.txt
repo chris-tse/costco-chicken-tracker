@@ -1,0 +1,5 @@
+<environment_context>
+  <current_date>2026-07-26</current_date>
+  <timezone>America/Chicago</timezone>
+  <filesystem><workspace_roots><root>/home/kafka/code/costco-chicken-tracker</root></workspace_roots><permission_profile type="managed"><file_system type="restricted"><entry access="read"><special>:root</special></entry><entry access="write"><path>/home/kafka/code/costco-chicken-tracker</path></entry><entry access="write"><special>:slash_tmp</special></entry><entry access="write"><special>:tmpdir</special></entry><entry access="write"><path>/home/kafka/.codex/visualizations/2026/07/27/019fa0e1-c413-7043-8b9a-5697cdd08c35</path></entry><entry access="read"><path>/home/kafka/code/costco-chicken-tracker/.git</path></entry><entry access="read"><path>/home/kafka/code/costco-chicken-tracker/.agents</path></entry><entry access="read"><path>/home/kafka/code/costco-chicken-tracker/.codex</path></entry></file_system></permission_profile></filesystem>
+</environment_context>
