@@ -1,0 +1,3 @@
+I think B is best, reuse the grid for both defaulting to sightings, doneness on demand. Best time is visibly apparent by grid color anyway so no need for C-like
+
+Make a [$handoff](/home/kafka/.agents/skills/handoff/SKILL.md) for another agent to pick up
