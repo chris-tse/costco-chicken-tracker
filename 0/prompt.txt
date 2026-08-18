@@ -1,0 +1,6 @@
+Until the current open tickets are complete, follow these steps:
+- use a terra subagent to $implement 
+- once the PR is open, use three fresh agents to $code-review , two Luna to review specific aspects as necessary and one Terra for overall review. If all 3 agree that it’s ready to merge, merge the PR with rebase
+- find the next ready ticket
+
+Start with #13
