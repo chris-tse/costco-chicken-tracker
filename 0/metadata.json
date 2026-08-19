@@ -1,0 +1,38 @@
+{
+  "cli_version": "0.10.0",
+  "checkpoint_id": "01M0CM286TGKZNVFHWVC4M30GV",
+  "session_id": "01a0077b-3ac8-7c01-90ce-a282a3fb7613",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-19T09:01:34.295953057Z",
+  "branch": "ticket-19-mvp-acceptance",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".github/workflows/ci.yml",
+    "docs/feature/phase-02/019-mvp-acceptance/research.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.6-sol",
+  "turn_id": "29d8db11ae83",
+  "checkpoint_transcript_start": 169,
+  "transcript_lines_at_start": 169,
+  "compact_transcript_start": 38,
+  "token_usage": {
+    "input_tokens": 68318,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 5857024,
+    "output_tokens": 4788,
+    "api_call_count": 45
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-08-19T09:01:34.252845062Z",
+    "agent_lines": 12,
+    "agent_removed": 2,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 12,
+    "total_lines_changed": 14,
+    "agent_percentage": 100,
+    "metric_version": 2
+  }
+}
