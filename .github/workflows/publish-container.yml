@@ -53,24 +53,16 @@ jobs:
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
 
-      - name: Set package visibility to public
+      - name: Verify the published image is public
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PACKAGE_OWNER: ${{ github.event.repository.owner.login }}
-          PACKAGE_OWNER_TYPE: ${{ github.event.repository.owner.type }}
-          PACKAGE_NAME: ${{ github.event.repository.name }}
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
+          IMAGE_TAG: sha-${{ github.sha }}
         run: |
-          case "$PACKAGE_OWNER_TYPE" in
-            Organization)
-              endpoint="/orgs/$PACKAGE_OWNER/packages/container/$PACKAGE_NAME"
-              ;;
-            User)
-              endpoint="/user/packages/container/$PACKAGE_NAME"
-              ;;
-            *)
-              echo "Unsupported GitHub package owner type: $PACKAGE_OWNER_TYPE" >&2
-              exit 1
-              ;;
-          esac
-
-          gh api --method PATCH "$endpoint" -f visibility=public
+          repository="${IMAGE_NAME#ghcr.io/}"
+          token="$(curl --fail --silent --show-error \
+            "https://ghcr.io/token?service=ghcr.io&scope=repository:$repository:pull" \
+            | jq --raw-output .token)"
+          curl --fail --silent --show-error \
+            --header "Authorization: Bearer $token" \
+            --header "Accept: application/vnd.oci.image.index.v1+json" \
+            "https://ghcr.io/v2/$repository/manifests/$IMAGE_TAG" >/dev/null
