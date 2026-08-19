@@ -56,13 +56,13 @@ jobs:
       - name: Verify the published image is public
         env:
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
-          IMAGE_TAG: sha-${{ github.sha }}
         run: |
           repository="${IMAGE_NAME#ghcr.io/}"
+          image_tag="sha-$(printf '%.12s' "$GITHUB_SHA")"
           token="$(curl --fail --silent --show-error \
             "https://ghcr.io/token?service=ghcr.io&scope=repository:$repository:pull" \
             | jq --raw-output .token)"
           curl --fail --silent --show-error \
             --header "Authorization: Bearer $token" \
             --header "Accept: application/vnd.oci.image.index.v1+json" \
-            "https://ghcr.io/v2/$repository/manifests/$IMAGE_TAG" >/dev/null
+            "https://ghcr.io/v2/$repository/manifests/$image_tag" >/dev/null
