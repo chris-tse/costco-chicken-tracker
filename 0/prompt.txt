@@ -1,0 +1,1 @@
+Work on the next ticket. After implementation, have Luna subagents perform $code-review , then open a PR. If CI is green, rebase merge it, then suggest the next ticket
