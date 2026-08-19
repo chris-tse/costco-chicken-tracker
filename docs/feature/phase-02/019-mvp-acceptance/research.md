@@ -81,3 +81,6 @@ switcher, and unused treatments are not part of the production implementation.
   while the workflow's Chrome-for-Testing setup completed and the full current/previous-browser
   journeys passed. The container-smoke job should use that explicit Chrome installation too;
   browser coverage is unchanged and runner package-manager availability is removed from the gate.
+- The first post-merge public-image check addressed a full 40-character `github.sha`, but
+  Docker Metadata emits the configured 12-character `sha-` tag. Derive the verification tag
+  from the first 12 characters of `GITHUB_SHA` so it checks the artifact actually published.
