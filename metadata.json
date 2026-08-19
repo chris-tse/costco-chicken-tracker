@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.10.0",
+  "checkpoint_id": "01M0CMARS09D3HXPPJSECK7G25",
+  "strategy": "manual-commit",
+  "branch": "ticket-19-publish-verification",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".github/workflows/publish-container.yml",
+    "docs/feature/phase-02/019-mvp-acceptance/research.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 30972,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 3600640,
+    "output_tokens": 2652,
+    "api_call_count": 23
+  }
+}
