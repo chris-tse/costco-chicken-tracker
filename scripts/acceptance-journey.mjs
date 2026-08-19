@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { chromium } from "@playwright/test";
+import { chromium, expect } from "@playwright/test";
 
 import { isDonenessUpdateRequest } from "./acceptance-request-matcher.mjs";
 
@@ -165,10 +165,7 @@ async function saveSighting(page, labelDate, labelTime) {
 
 async function assertFocused(locator, description) {
   await locator.waitFor({ state: "visible" });
-  const isFocused = await locator.evaluate(
-    (element) => document.activeElement === element
-  );
-  ensure(isFocused, `${description} receives focus`);
+  await expect(locator, `${description} receives focus`).toBeFocused();
 }
 
 async function pressUntilFocused(page, locator, key, description) {

@@ -66,3 +66,14 @@ accent read as a visual "fingernail"; the icon, light warning wash, hierarchy, a
 
 The final A treatment was approved for production. The throwaway variant query parameter,
 switcher, and unused treatments are not part of the production implementation.
+
+## 2026-08-19 — final handoff audit
+
+- The current assembled candidate, `6144297d2f8d9b1b66cec2336584e1b00186899a`, passed all CI
+  jobs on 2026-08-18: 84 tests, build, lint, typecheck, PostgreSQL 17.11 container checks, and
+  complete Chrome 152/151 journeys at 375px, 390px, and 430px.
+- The image publishing workflow successfully published `latest` and the commit tag, then failed
+  while asking its repository-scoped `GITHUB_TOKEN` to change user-package visibility. Package
+  visibility is an owner-level setting and the already-public package can be pulled anonymously.
+- Final acceptance should verify anonymous access to the just-published immutable commit tag. It
+  should not attempt to mutate owner-level package settings on every release.
