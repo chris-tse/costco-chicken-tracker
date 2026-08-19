@@ -77,3 +77,7 @@ switcher, and unused treatments are not part of the production implementation.
   visibility is an owner-level setting and the already-public package can be pulled anonymously.
 - Final acceptance should verify anonymous access to the just-published immutable commit tag. It
   should not attempt to mutate owner-level package settings on every release.
+- Two consecutive PR runs stalled in Playwright's redundant `install --with-deps chromium` step,
+  while the workflow's Chrome-for-Testing setup completed and the full current/previous-browser
+  journeys passed. The container-smoke job should use that explicit Chrome installation too;
+  browser coverage is unchanged and runner package-manager availability is removed from the gate.

@@ -60,10 +60,16 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Install Chromium
-        run: bunx playwright install --with-deps chromium
+      - name: Install Chrome for Testing
+        id: container-chrome
+        uses: browser-actions/setup-chrome@v2
+        with:
+          chrome-version: stable
 
       - name: Verify self-hosted container
+        env:
+          ACCEPTANCE_BROWSER_LABEL: Google Chrome container smoke (${{ steps.container-chrome.outputs.chrome-version }})
+          BROWSER_EXECUTABLE_PATH: ${{ steps.container-chrome.outputs.chrome-path }}
         run: bun run container:smoke
 
   supported-chrome:
